@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<version pluginID="org.eclipse.imp.versionIncrementer"
+         versionID="1.0.69">
+    <file path="src/org.eclipse.imp.versionIncrementer/VersionIncrementerPlugin.java"
+          version="1.1"/>
+    <file path="src/org.eclipse.imp.versionIncrementer/SrcFile1.java"
+          version="1.3"/>
+    <file path="src/org.eclipse.imp.versionIncrementer/SrcFile2.java"
+          version="1.12"/>
+    <file path="src/org.eclipse.imp.versionIncrementer/SrcFile3.java"
+          version="1.8"/>
+</version>

@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: IMP Release Engineering Tools (Incubation)
+Bundle-SymbolicName: org.eclipse.imp.releng;singleton:=true
+Bundle-Version: 1.0.21
+Bundle-Activator: org.eclipse.imp.releng.ReleaseEngineeringPlugin
+Bundle-Localization: plugin
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.jdt.core,
+ org.eclipse.core.resources,
+ org.eclipse.ui.console,
+ org.eclipse.ltk.core.refactoring,
+ org.eclipse.text,
+ org.eclipse.team.core,
+ org.eclipse.core.filesystem,
+ org.eclipse.team.cvs.core,
+ org.tigris.subversion.subclipse.core,
+ org.eclipse.team.cvs.ui
+Eclipse-LazyStart: true
+Bundle-Vendor: rfuhrer@watson.ibm.com
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

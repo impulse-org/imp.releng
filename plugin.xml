@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="org.eclipse.imp.versionIncrementer.actionSet"
+            label="Release Engineering"
+            visible="true">
+         <menu
+               id="org.eclipse.imp.releaseEngineering.menu"
+               label="Release Engineering"
+               path="edit">
+            <groupMarker name="org.eclipse.imp.releaseEngineering.releaseGroup"/>
+            <groupMarker name="org.eclipse.imp.releaseEngineering.workspacePrepGroup"/>
+         </menu>
+         <action
+               class="org.eclipse.imp.releng.actions.IncrementVersionsAction"
+               id="org.eclipse.imp.versionIncrementer.incrementVersion"
+               label="Increment Feature Versions"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.TagFeaturesAction"
+               id="org.eclipse.imp.releaseEngineering.tagFeatures"
+               label="Tag Features"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.PublishReleaseAction"
+               id="org.eclipse.imp.releaseEngineering.publishRelease"
+               label="Publish Release"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.RetrieveUpdateSiteAction"
+               id="org.eclipse.imp.releaseEngineering.retrieveUpdateSite"
+               label="Retrieve Update Site Project"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.RetrieveFeaturesAction"
+               id="org.eclipse.imp.releaseEngineering.retrieveFeatures"
+               label="Retrieve Features from Repository"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.RetrievePluginsAction"
+               id="org.eclipse.imp.releaseEngineering.retrievePlugins"
+               label="Retrieve Plugins from Repository"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.UpdateFeatureListAction"
+               id="org.eclipse.imp.releaseEngineering.updateFeatureList"
+               label="Update Site Project Set"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.UpdateFeatureProjectSetsAction"
+               id="org.eclipse.imp.releaseEngineering.updateFeatureProjectSets"
+               label="Update Feature Project Sets"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.UpdateSiteAction"
+               id="org.eclipse.imp.releaseEngineering.updateUpdateSite"
+               label="Add New Feature Versions to Update Site"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               style="push"/>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.preferencePages">
+      <page
+            class="org.eclipse.imp.releng.prefs.VersionIncrementerPreferencePage"
+            id="org.eclipse.imp.versionIncrementer.prefPage"
+            name="Version Manipulation"/>
+   </extension>
+   <extension
+         point="org.eclipse.core.runtime.preferences">
+      <initializer class="org.eclipse.imp.releng.prefs.VersionIncrementerPreferenceInitializer"/>
+   </extension>
+
+</plugin>
