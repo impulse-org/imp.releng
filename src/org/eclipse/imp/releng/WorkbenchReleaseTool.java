@@ -68,13 +68,13 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         return Collections.emptySet();
     }
 
-    protected Set<FeatureInfo> selectFeatures() {
-        final Set<FeatureInfo> selectedFeatures= new HashSet<FeatureInfo>();
+    @Override
+    protected List<FeatureInfo> selectFeatureInfos() {
+        SelectFeatureInfosDialog featureDialog= new SelectFeatureInfosDialog(getShell(), fFeatureInfos);
 
-        Dialog featureDialog= new SelectFeatureInfosDialog(getShell(), selectedFeatures);
         if (featureDialog.open() == Dialog.OK)
-            return selectedFeatures;
-        return Collections.emptySet();
+            return featureDialog.getSelectedFeatures();
+        return Collections.emptyList();
     }
 
     // TODO Probably reconstitute this as a Forms-based "dashboard" page
@@ -214,12 +214,12 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         if (fFeatureInfos.size() == 0)
             return;
 
-        Set<FeatureInfo> featureInfos= new HashSet<FeatureInfo>();
-        featureInfos.addAll(fFeatureInfos);
-        SelectFeatureInfosDialog d= new SelectFeatureInfosDialog(getShell(), featureInfos);
+        SelectFeatureInfosDialog d= new SelectFeatureInfosDialog(getShell(), fFeatureInfos);
 
         if (d.open() != Dialog.OK)
             return;
+
+        List<FeatureInfo> featureInfos= d.getSelectedFeatures();
 
         final Map<String,Set<String>> pluginProjectRefs= new HashMap<String,Set<String>>();
 
