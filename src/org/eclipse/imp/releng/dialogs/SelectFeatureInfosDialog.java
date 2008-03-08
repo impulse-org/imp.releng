@@ -3,8 +3,11 @@
  */
 package org.eclipse.imp.releng.dialogs;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import org.eclipse.imp.releng.metadata.FeatureInfo;
 import org.eclipse.jface.dialogs.Dialog;
@@ -18,18 +21,27 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 
 public class SelectFeatureInfosDialog extends Dialog {
-    private final Set<FeatureInfo> fAllFeatureInfos= new HashSet<FeatureInfo>();
-    private final Set<FeatureInfo> fFeatures= new HashSet<FeatureInfo>();
+    private final List<FeatureInfo> fAllFeatureInfos= new ArrayList<FeatureInfo>();
+    private final List<FeatureInfo> fFeatures= new ArrayList<FeatureInfo>();
 
     /**
      * @param shell the parent shell
      * @param features on entry, the Set of all known features; on return,
      * the set of user-selected features
      */
-    public SelectFeatureInfosDialog(Shell shell, Set<FeatureInfo> features) {
+    public SelectFeatureInfosDialog(Shell shell, Collection<FeatureInfo> features) {
         super(shell);
         fAllFeatureInfos.addAll(features);
-        fFeatures.addAll(features);
+        Collections.sort(fAllFeatureInfos,
+                new Comparator<FeatureInfo>() {
+                    public int compare(FeatureInfo f1, FeatureInfo f2) {
+                        return f1.fFeatureID.compareTo(f2.fFeatureID);
+                    }
+                });
+    }
+
+    public List<FeatureInfo> getSelectedFeatures() {
+        return fFeatures;
     }
 
     @Override
