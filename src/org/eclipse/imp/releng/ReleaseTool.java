@@ -35,8 +35,10 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.imp.releng.actions.VersionScanner;
 import org.eclipse.imp.releng.metadata.FeatureInfo;
 import org.eclipse.imp.releng.metadata.FileVersionMap;
@@ -64,7 +66,14 @@ import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ccvs.core.CVSException;
 import org.eclipse.team.internal.ccvs.core.CVSProviderPlugin;
+import org.eclipse.team.internal.ccvs.core.CVSTag;
+import org.eclipse.team.internal.ccvs.core.CVSTeamProvider;
 import org.eclipse.team.internal.ccvs.core.CVSWorkspaceSubscriber;
+import org.eclipse.team.internal.ccvs.core.client.Command;
+import org.eclipse.team.internal.ccvs.core.client.Session;
+import org.eclipse.team.internal.ccvs.core.client.Command.LocalOption;
+import org.eclipse.team.internal.ccvs.core.resources.CVSWorkspaceRoot;
+import org.eclipse.team.internal.ccvs.ui.Policy;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
@@ -320,6 +329,10 @@ public abstract class ReleaseTool {
 
     protected Set<IProject> selectFeatureProjects(final Set<IProject> allFeatureProjects) {
 	return allFeatureProjects;
+    }
+
+    protected List<FeatureInfo> selectFeatureInfos() {
+        return fFeatureInfos;
     }
 
     protected Set<IProject> collectAllFeatureProjects(IWorkspaceRoot wsRoot) {
@@ -1059,6 +1072,130 @@ public abstract class ReleaseTool {
         }
         Collections.sort(result);
         return result;
+    }
+
+    public void tagFeatures() {
+        // For inspiration, see org.eclipse.releng.tools.TagAndReleaseOperation
+        //
+        // N.B. SVN doesn't support tags, so this may have to copy the given
+        // folder to a name that embeds the desired tag, and set the SVN
+        // "final" property on the resulting folder.
+        //
+        collectMetaData(true);
+
+        List<FeatureInfo> featureInfos= selectFeatureInfos();
+        final Map<IProject,String/*tag*/> projectTagMap= collectProjectTags(featureInfos);
+        IProgressService progressService= PlatformUI.getWorkbench().getProgressService();
+
+        try {
+            progressService.run(true, true, new IRunnableWithProgress() {
+                public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+                    tagFeatureProjects(projectTagMap, monitor);
+                }
+            });
+        } catch (InvocationTargetException e) {
+            postError("Exception encountered while retrieving projects: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            postError("Exception encountered while retrieving projects: " + e.getMessage(), e);
+        }
+    }
+
+    private Map<IProject, String/*tag*/> collectProjectTags(List<FeatureInfo> featureInfos) {
+        Map<IProject,String/*tag*/> result= new HashMap<IProject, String>();
+
+        for(FeatureInfo featureInfo: featureInfos) {
+            String featureID= featureInfo.fFeatureID;
+            String featureVersion= featureInfo.fFeatureVersion;
+            IProject project= featureInfo.fProject;
+            String tag= featureID.replace('.', '-') + "_" + featureVersion.replace('.', '_');
+
+            result.put(project, tag);
+
+            Set<PluginInfo> plugins= featureInfo.fPluginInfos;
+
+            for(PluginInfo pluginInfo: plugins) {
+                IProject pluginProject= fWSRoot.getProject(pluginInfo.fPluginID);
+
+                if (pluginProject == null) {
+                    postError("Unable to find project for plugin " + pluginInfo.fPluginID, null);
+                } else {
+                    result.put(pluginProject, tag);
+                }
+            }
+        }
+        return result;
+    }
+
+    private void tagFeatureProjects(Map<IProject,String/*tag*/> projectTagMap, IProgressMonitor progress) {
+        int scale= projectTagMap.keySet().size();
+        progress.beginTask(null, 100 * scale);
+
+        for(IProject project: projectTagMap.keySet()) {
+            String projectTag= projectTagMap.get(project);
+            Set localOptions = new HashSet();
+            LocalOption[] commandOptions = (LocalOption[]) localOptions.toArray(new LocalOption[localOptions.size()]);
+
+            commandOptions = Command.DO_NOT_RECURSE.removeFrom(commandOptions);
+
+            CVSTag tag= new CVSTag(projectTag, CVSTag.VERSION);
+            CVSTeamProvider provider = (CVSTeamProvider) RepositoryProvider.getProvider(project);
+
+            // Build the arguments list
+            String[] arguments = getStringArguments(new IResource[] { project });
+            Session s= null;
+
+            try {
+                // Execute the command
+                CVSWorkspaceRoot root= provider.getCVSWorkspaceRoot();
+                s = new Session(root.getRemoteLocation(), root.getLocalRoot());
+
+                // Opening the session takes 20% of the time
+                s.open(subMonitorFor(progress, 20), true /* open for modification */);
+                IStatus status= Command.TAG.execute(s,
+                        Command.NO_GLOBAL_OPTIONS,
+                        commandOptions,
+                        tag,
+                        arguments,
+                        null,
+                        subMonitorFor(progress, 80));
+                if (status.getSeverity() != IStatus.OK) {
+                    System.err.println("Tag command execution finished: " + status.getMessage());
+                    IStatus[] children= status.getChildren();
+                    if (children != null && children.length > 0) {
+                        for(int i= 0; i < children.length; i++) {
+                            System.err.println(children[i].getMessage());
+                        }
+                    }
+                }
+            } catch (CVSException e) {
+                e.printStackTrace();
+            } finally {
+                if (s != null)
+                    s.close();
+            }
+        }
+        progress.done();
+    }
+
+    private IProgressMonitor subMonitorFor(IProgressMonitor monitor, int ticks) {
+        if (monitor == null)
+            return new NullProgressMonitor();
+        if (monitor instanceof NullProgressMonitor)
+            return monitor;
+        return new SubProgressMonitor(monitor, ticks);
+    }
+
+    protected String[] getStringArguments(IResource[] resources) {
+        List arguments = new ArrayList(resources.length);
+        for (int i=0;i<resources.length;i++) {
+            IPath cvsPath = resources[i].getFullPath().removeFirstSegments(1);
+            if (cvsPath.segmentCount() == 0) {
+                arguments.add(Session.CURRENT_LOCAL_FOLDER);
+            } else {
+                arguments.add(cvsPath.toString());
+            }
+        }
+        return (String[])arguments.toArray(new String[arguments.size()]);
     }
 
     private static CVSWorkspaceSubscriber getCVSSubscriber() {
