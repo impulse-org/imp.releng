@@ -30,6 +30,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceDescription;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
@@ -73,7 +75,6 @@ import org.eclipse.team.internal.ccvs.core.client.Command;
 import org.eclipse.team.internal.ccvs.core.client.Session;
 import org.eclipse.team.internal.ccvs.core.client.Command.LocalOption;
 import org.eclipse.team.internal.ccvs.core.resources.CVSWorkspaceRoot;
-import org.eclipse.team.internal.ccvs.ui.Policy;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
@@ -1003,7 +1004,20 @@ public abstract class ReleaseTool {
         }
     }
 
+    private boolean fTemporarilySuppressAutoBuild= true;
+
     protected void retrieveProjectsWithProgress(final Map<String, Set<String>> projectRefs) {
+        IWorkspace workspace= fWSRoot.getWorkspace();
+        IWorkspaceDescription wsDesc= workspace.getDescription();
+        boolean wasAutoBuilding= wsDesc.isAutoBuilding();
+
+        // Temporarily turn off auto-building while we're checking out projects,
+        // to avoid re-building lots of stuff, since the projects won't come in
+        // in dependency order anyway.
+        if (fTemporarilySuppressAutoBuild && wasAutoBuilding) {
+            setAutoBuilding(false, workspace, wsDesc);
+        }
+
         IProgressService progressService= PlatformUI.getWorkbench().getProgressService();
     
         try {
@@ -1016,6 +1030,18 @@ public abstract class ReleaseTool {
             postError("Exception encountered while retrieving projects: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             postError("Exception encountered while retrieving projects: " + e.getMessage(), e);
+        }
+
+        if (fTemporarilySuppressAutoBuild && wasAutoBuilding) {
+            setAutoBuilding(wasAutoBuilding, workspace, wsDesc);
+        }
+    }
+
+    private void setAutoBuilding(boolean b, IWorkspace workspace, IWorkspaceDescription wsDesc) {
+        wsDesc.setAutoBuilding(b);
+        try {
+            workspace.setDescription(wsDesc);
+        } catch (CoreException e) {
         }
     }
 
