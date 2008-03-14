@@ -1,3 +1,15 @@
+/*******************************************************************************
+* Copyright (c) 2007 IBM Corporation.
+* All rights reserved. This program and the accompanying materials
+* are made available under the terms of the Eclipse Public License v1.0
+* which accompanies this distribution, and is available at
+* http://www.eclipse.org/legal/epl-v10.html
+*
+* Contributors:
+*    Robert Fuhrer (rfuhrer@watson.ibm.com) - initial API and implementation
+
+*******************************************************************************/
+
 package org.eclipse.imp.releng;
 
 import java.io.IOException;
@@ -124,9 +136,9 @@ public class CopyrightAdder {
             if (src.contains(COPYRIGHT_NOTICE))
                 return src;
             src = removeOldCopyright(src);
-            int rulesLoc= src.indexOf("$Rules");
+            int rulesLoc= src.indexOf("%Rules"); // Look for the new keyword form ("%Rules") first; "XXX$Rules" is a legal right-hand side symbol reference
             if (rulesLoc < 0)
-                rulesLoc= src.indexOf("%Rules");
+                rulesLoc= src.indexOf("$Rules");
             return src.substring(0, rulesLoc) + COPYRIGHT_NOTICE + src.substring(rulesLoc);
         }
     }
