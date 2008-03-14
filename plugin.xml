@@ -79,13 +79,13 @@
    <extension
          point="org.eclipse.ui.preferencePages">
       <page
-            class="org.eclipse.imp.releng.prefs.VersionIncrementerPreferencePage"
+            class="org.eclipse.imp.releng.prefs.ReleaseEngineeringPreferencePage"
             id="org.eclipse.imp.versionIncrementer.prefPage"
             name="Version Manipulation"/>
    </extension>
    <extension
          point="org.eclipse.core.runtime.preferences">
-      <initializer class="org.eclipse.imp.releng.prefs.VersionIncrementerPreferenceInitializer"/>
+      <initializer class="org.eclipse.imp.releng.prefs.ReleaseEngineeringPreferenceInitializer"/>
    </extension>
 
 </plugin>
