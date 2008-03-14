@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: IMP Release Engineering Tools (Incubation)
 Bundle-SymbolicName: org.eclipse.imp.releng;singleton:=true
-Bundle-Version: 1.0.24
+Bundle-Version: 1.0.25
 Bundle-Activator: org.eclipse.imp.releng.ReleaseEngineeringPlugin
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
