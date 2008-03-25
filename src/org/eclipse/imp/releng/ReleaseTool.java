@@ -1101,7 +1101,7 @@ public abstract class ReleaseTool {
     }
 
     private static final String UPDATE_SITE_PROVIDER= "org.eclipse.team.cvs.core.cvsnature";
-    private static final String UPDATE_SITE_REF= "1.0,:extssh:eclipse-imp.cvs.sourceforge.net:/cvsroot/eclipse-imp,org.eclipse.imp.update,org.eclipse.imp.update";
+    private static final String UPDATE_SITE_REF= "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update";
 
     public void retrieveUpdateSiteProject() {
         Map<String, Set<String>> projectRefs= new HashMap<String, Set<String>>();
