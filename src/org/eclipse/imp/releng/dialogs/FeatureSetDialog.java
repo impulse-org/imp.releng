@@ -16,17 +16,11 @@
 package org.eclipse.imp.releng.dialogs;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import org.eclipse.core.resources.IProject;
 import org.eclipse.imp.releng.ReleaseTool;
-import org.eclipse.imp.releng.WorkbenchReleaseTool;
 import org.eclipse.imp.releng.metadata.FeatureInfo;
 import org.eclipse.imp.releng.metadata.UpdateSiteInfo;
-import org.eclipse.imp.releng.utils.Pair;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.CellEditor;
@@ -106,14 +100,12 @@ public class FeatureSetDialog extends Dialog {
         proceedButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
-                List<FeatureInfo> features= new ArrayList<FeatureInfo>();
-    
                 for(int i= 0; i < fItems.size(); i++) {
                     FeatureTableItem item= fItems.get(i);
-    
-                    features.add(fReleaseTool.findFeatureInfo(item.fFeatureId));
+
+                    fSite.addFeatureIfMissing(fReleaseTool.findFeatureInfo(item.fFeatureId));
                 }
-                writeSiteFeatureSet(features, fSite.fProject);
+                fReleaseTool.writeSiteFeatureSet(fSite);
             }
         });
     }
@@ -276,16 +268,5 @@ public class FeatureSetDialog extends Dialog {
     @Override
     protected int getShellStyle() {
         return super.getShellStyle() | SWT.RESIZE;
-    }
-
-    private void writeSiteFeatureSet(List<FeatureInfo> features, IProject hostProject) {
-        Map<String/*repoTypeID*/,Set<String/*repoRef*/>> repoRefMap= new HashMap<String,Set<String>>();
-
-        for(FeatureInfo feature: features) {
-            Pair<String/*repoTypeID*/,String/*repoRef*/> repoDesc= fReleaseTool.getRepoRefForProject(feature.fProject);
-
-            WorkbenchReleaseTool.addMapEntry(repoDesc.first, repoDesc.second, repoRefMap);
-        }
-        fReleaseTool.writeProjectSet(repoRefMap, hostProject, "features.psf");
     }
 }

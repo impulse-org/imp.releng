@@ -175,6 +175,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         MessageDialog.openWarning(shell, "Nothing to update", "No update sites need updating");
     }
 
+    @Override
     public void updateFeatureList() {
         collectMetaData(true);
 

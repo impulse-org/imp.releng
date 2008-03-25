@@ -65,6 +65,8 @@ public class FeatureInfo {
 
     public String fFeatureVersion;
 
+    private Node fDescriptionNode;
+
     public FeatureInfo(IProject project, IFile manifestFile) throws ParserConfigurationException, SAXException, IOException {
 	fProject= project;
 	fManifestFile= manifestFile;
@@ -79,6 +81,7 @@ public class FeatureInfo {
 
         Node featureNode= getFeatureNode();
         Node versionNode= featureNode.getAttributes().getNamedItem("version");
+        fDescriptionNode= featureNode.getChildNodes().item(1);
         fFeatureVersion= versionNode.getNodeValue();
     }
 
@@ -124,6 +127,22 @@ public class FeatureInfo {
 
     public void setNewVersion(String newVersion) {
         getFeatureVersionNode().setNodeValue(newVersion);
+    }
+
+    public String getURL() {
+        return fDescriptionNode.getAttributes().getNamedItem("url").getNodeValue();
+    }
+
+    @Override
+    public int hashCode() {
+        return 3847 + 5779 * fFeatureID.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof FeatureInfo)) return false;
+        FeatureInfo other= (FeatureInfo) obj;
+        return fFeatureID.equals(other.fFeatureID);
     }
 
     @Override

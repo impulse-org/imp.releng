@@ -136,6 +136,12 @@ public abstract class ReleaseTool {
 
             for(PluginInfo pi: fi.fPluginInfos) {
                 IProject pluginProject= fWSRoot.getProject(pi.fPluginID);
+
+                if (pluginProject == null || !pluginProject.exists()) {
+                    ReleaseEngineeringPlugin.getMsgStream().println("Unable to open project for plugin ID " + pi.fPluginID + "; ignoring.");
+                    continue;
+                }
+
                 Pair<String/*repoTypeID*/,String/*repoRef*/> repoDesc= getRepoRefForProject(pluginProject);
 
                 addMapEntry(repoDesc.first, repoDesc.second, repoRefMap);
@@ -452,6 +458,10 @@ public abstract class ReleaseTool {
         fPluginInfos.add(pluginInfo);
     }
 
+    public List<PluginInfo> getPluginInfos() {
+        return fPluginInfos;
+    }
+
     /**
      * @return the PluginInfo for the plugin with the given plugin ID
      */
@@ -739,26 +749,42 @@ public abstract class ReleaseTool {
         }
     }
 
-    private void rewriteFeatureManifests(List<Change> changes, List<IFile> changedFiles) {
+    protected void rewriteFeatureManifest(FeatureInfo featureInfo) {
+        List<IFile> changedFiles= new ArrayList<IFile>();
+        List<Change> changes= new ArrayList<Change>();
+
+        try {
+            rewriteFeatureManifest(featureInfo, changes, changedFiles);
+            doPerformChange(changes, "Feature manifest edits", changedFiles);
+        } catch (IOException e) {
+            ReleaseEngineeringPlugin.logError(e);
+        }
+    }
+
+    private void rewriteFeatureManifest(FeatureInfo fi, List<Change> changes, List<IFile> changedFiles) throws IOException {
+        ReleaseEngineeringPlugin.getMsgStream().println("Rewriting feature manifest " + fi.fManifestFile.getLocation().toPortableString());
+
+        Document manifestDoc= fi.fManifestDoc;
+        OutputFormat format= new OutputFormat(manifestDoc);
+        ByteArrayOutputStream bos= new ByteArrayOutputStream(2048);
+        XMLSerializer serializer= new XMLSerializer(bos, format);
+
+        serializer.serialize(manifestDoc.getDocumentElement());
+
+        TextFileChange tfc= new TextFileChange("Version increment for " + fi.fFeatureID, fi.fManifestFile);
+        long curFileLength= new File(fi.fManifestFile.getLocation().toOSString()).length();
+
+        tfc.setEdit(new MultiTextEdit());
+        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, bos.toString()));
+
+        changedFiles.add(fi.fManifestFile);
+        changes.add(tfc);
+    }
+
+    protected void rewriteFeatureManifests(List<Change> changes, List<IFile> changedFiles) {
         for(FeatureInfo fi: fFeatureInfos) {
             try {
-                ReleaseEngineeringPlugin.getMsgStream().println("Rewriting feature manifest " + fi.fManifestFile.getLocation().toPortableString());
-
-                Document manifestDoc= fi.fManifestDoc;
-                OutputFormat format= new OutputFormat(manifestDoc);
-                ByteArrayOutputStream bos= new ByteArrayOutputStream(2048);
-                XMLSerializer serializer= new XMLSerializer(bos, format);
-
-                serializer.serialize(manifestDoc.getDocumentElement());
-
-                TextFileChange tfc= new TextFileChange("Version increment for " + fi.fFeatureID, fi.fManifestFile);
-                long curFileLength= new File(fi.fManifestFile.getLocation().toOSString()).length();
-
-                tfc.setEdit(new MultiTextEdit());
-                tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, bos.toString()));
-
-                changedFiles.add(fi.fManifestFile);
-                changes.add(tfc);
+                rewriteFeatureManifest(fi, changes, changedFiles);
             } catch (IOException io) {
         	ReleaseEngineeringPlugin.logError(io);
             }
@@ -821,6 +847,23 @@ public abstract class ReleaseTool {
         saveFeatureProjectSets(selectedFeatures);
     }
 
+    public void writeSiteFeatureSet(UpdateSiteInfo siteInfo) {
+        Map<String/*repoTypeID*/,Set<String/*repoRef*/>> repoRefMap= new HashMap<String,Set<String>>();
+
+        for(FeatureRef feature: siteInfo.fFeatureRefs) {
+            Pair<String/*repoTypeID*/,String/*repoRef*/> repoDesc= getRepoRefForProject(feature.findProject());
+
+            WorkbenchReleaseTool.addMapEntry(repoDesc.first, repoDesc.second, repoRefMap);
+        }
+        writeProjectSet(repoRefMap, siteInfo.fProject, "features.psf");
+    }
+
+    public void writeAllSiteFeatureSets() {
+        for(UpdateSiteInfo siteInfo: fUpdateSiteInfos) {
+            writeSiteFeatureSet(siteInfo);
+        }
+    }
+
     public void updateUpdateSites() {
         collectMetaData(true);
 
@@ -859,7 +902,7 @@ public abstract class ReleaseTool {
 
     protected abstract List<UpdateSiteInfo> confirmUpdateSites();
 
-    private void rewriteUpdateSiteManifests(List<UpdateSiteInfo> sites) {
+    protected void rewriteUpdateSiteManifests(List<UpdateSiteInfo> sites) {
         List<IFile> changedFiles= new ArrayList<IFile>();
         List<Change> changes= new ArrayList<Change>();
 
@@ -1271,4 +1314,15 @@ public abstract class ReleaseTool {
 	}
 	return sb.toString();
     }
+
+    public UpdateSiteInfo findSiteByName(String name) {
+        for(UpdateSiteInfo siteInfo: fUpdateSiteInfos) {
+            if (siteInfo.fProject.getName().equals(name)) {
+                return siteInfo;
+            }
+        }
+        return null;
+    }
+
+    public abstract void updateFeatureList();
 }

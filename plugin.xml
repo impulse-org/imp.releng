@@ -87,5 +87,9 @@
          point="org.eclipse.core.runtime.preferences">
       <initializer class="org.eclipse.imp.releng.prefs.ReleaseEngineeringPreferenceInitializer"/>
    </extension>
-
+   <extension point="org.eclipse.ui.views">
+      <view class="org.eclipse.imp.releng.DashboardView"
+            id="org.eclipse.imp.releng.dashboard"
+            name="Release Engineering Dashboard"/>
+   </extension>
 </plugin>

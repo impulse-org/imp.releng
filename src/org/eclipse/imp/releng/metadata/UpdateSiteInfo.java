@@ -25,6 +25,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.imp.releng.ReleaseEngineeringPlugin;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
@@ -77,6 +78,9 @@ public class UpdateSiteInfo {
         }
         public String getVersion() {
             return fVersion;
+        }
+        public IProject findProject() {
+            return ResourcesPlugin.getWorkspace().getRoot().getProject(fID + ".feature");
         }
         @Override
         public String toString() {
