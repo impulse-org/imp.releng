@@ -183,8 +183,8 @@ public class CopyrightAdder {
 
         collectProjectSourceRoots(projects);
 
-        try {
-            for(IFolder srcRoot: fSrcRoots) {
+        for(IFolder srcRoot: fSrcRoots) {
+            try {
                 srcRoot.accept(new IResourceVisitor() {
                     public boolean visit(IResource resource) throws CoreException {
                         if (resource.isDerived())
@@ -205,28 +205,33 @@ public class CopyrightAdder {
                         return true;
                     }
 
-                    private void addCopyright(ICopyrightAdder copyrightAdder, IFile file) throws CoreException {
-                        ReleaseEngineeringPlugin.getMsgStream().println("    Processing file " + file.getLocation().toPortableString());
-                        InputStream is= file.getContents();
-                        String origCont= getFileContents(new InputStreamReader(is));
+                    private void addCopyright(ICopyrightAdder copyrightAdder, IFile file) {
+                        try {
+                            ReleaseEngineeringPlugin.getMsgStream().println("    Processing file " + file.getLocation().toPortableString());
+                            InputStream is= file.getContents();
+                            String origCont= getFileContents(new InputStreamReader(is));
 
-                        final String newCont= copyrightAdder.addCopyright(origCont);
+                            final String newCont= copyrightAdder.addCopyright(origCont);
 
-                        file.setContents(new InputStream() {
-                            private int idx= 0;
-                            @Override
-                            public int read() throws IOException {
-                                if (idx < newCont.length())
-                                    return newCont.charAt(idx++);
-                                return -1;
-                            }
-                        }, true, true, new NullProgressMonitor());
+                            file.setContents(new InputStream() {
+                                private int idx= 0;
+                                @Override
+                                public int read() throws IOException {
+                                    if (idx < newCont.length())
+                                        return newCont.charAt(idx++);
+                                    return -1;
+                                }
+                            }, true, true, new NullProgressMonitor());
+                        } catch(CoreException e) {
+                            logError(e);
+                            e.printStackTrace();
+                        }
                     }
                 });
+            } catch (CoreException e) {
+                logError(e);
+                e.printStackTrace();
             }
-        } catch (CoreException e) {
-            logError(e);
-            e.printStackTrace();
         }
     }
 
