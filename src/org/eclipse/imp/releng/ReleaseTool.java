@@ -13,7 +13,6 @@
 package org.eclipse.imp.releng;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -21,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +38,13 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
@@ -96,9 +103,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import com.sun.org.apache.xml.internal.serialize.OutputFormat;
-import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
 
 public abstract class ReleaseTool {
     protected IWorkspaceRoot fWSRoot= ResourcesPlugin.getWorkspace().getRoot();
@@ -764,21 +768,31 @@ public abstract class ReleaseTool {
     private void rewriteFeatureManifest(FeatureInfo fi, List<Change> changes, List<IFile> changedFiles) throws IOException {
         ReleaseEngineeringPlugin.getMsgStream().println("Rewriting feature manifest " + fi.fManifestFile.getLocation().toPortableString());
 
-        Document manifestDoc= fi.fManifestDoc;
-        OutputFormat format= new OutputFormat(manifestDoc);
-        ByteArrayOutputStream bos= new ByteArrayOutputStream(2048);
-        XMLSerializer serializer= new XMLSerializer(bos, format);
+        try {
+	        Document manifestDoc= fi.fManifestDoc;
+	        DOMSource source= new DOMSource(manifestDoc);
+	        StringWriter strWriter= new StringWriter();
+	        StreamResult result= new StreamResult(strWriter);
+	        TransformerFactory tf= TransformerFactory.newInstance();
+	        Transformer serializer= tf.newTransformer();
 
-        serializer.serialize(manifestDoc.getDocumentElement());
+	        serializer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
+	        serializer.setOutputProperty(OutputKeys.INDENT, "yes");
+	        serializer.transform(source, result);
 
-        TextFileChange tfc= new TextFileChange("Version increment for " + fi.fFeatureID, fi.fManifestFile);
-        long curFileLength= new File(fi.fManifestFile.getLocation().toOSString()).length();
+	        TextFileChange tfc= new TextFileChange("Version increment for " + fi.fFeatureID, fi.fManifestFile);
+	        long curFileLength= new File(fi.fManifestFile.getLocation().toOSString()).length();
 
-        tfc.setEdit(new MultiTextEdit());
-        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, bos.toString()));
-
-        changedFiles.add(fi.fManifestFile);
-        changes.add(tfc);
+	        tfc.setEdit(new MultiTextEdit());
+	        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, strWriter.toString()));
+	
+	        changedFiles.add(fi.fManifestFile);
+	        changes.add(tfc);
+        } catch (TransformerConfigurationException e) {
+        	ReleaseEngineeringPlugin.logError(e);
+        } catch (TransformerException e) {
+        	ReleaseEngineeringPlugin.logError(e);
+		}
     }
 
     protected void rewriteFeatureManifests(List<Change> changes, List<IFile> changedFiles) {
