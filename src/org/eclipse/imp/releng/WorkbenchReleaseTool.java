@@ -238,7 +238,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
 
         for(FeatureInfo featureInfo: featureInfos) {
             IProject featureProject= featureInfo.fProject;
-            IFile projectSetFile= featureProject.getFile("feature.psf");
+            IFile projectSetFile= featureProject.getFile("plugins.psf");
             Map<String,Set<String>> providerToRefs= readProjectSet(projectSetFile);
 
             mergeMapInto(providerToRefs, pluginProjectRefs);

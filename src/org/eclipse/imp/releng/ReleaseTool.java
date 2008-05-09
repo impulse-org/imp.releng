@@ -1114,13 +1114,19 @@ public abstract class ReleaseTool {
         }
     }
 
-    private static final String UPDATE_SITE_PROVIDER= "org.eclipse.team.cvs.core.cvsnature";
-    private static final String UPDATE_SITE_REF= "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update";
+    public static final String CVS_UPDATE_SITE_PROVIDER= "org.eclipse.team.cvs.core.cvsnature";
+    public static final String SVN_UPDATE_SITE_PROVIDER= "org.tigris.subversion.subclipse.core.svnnature";
 
-    public void retrieveUpdateSiteProject() {
+    public static final String IMP_UPDATE_SITE_PROJECT= "org.eclipse.imp.update";
+    public static final String IMP_REPO_SERVER= "dev.eclipse.org";
+    public static final String IMP_REPO_PATH= "/svnroot/technology/org.eclipse.imp";
+
+    public static final String IMP_UPDATE_SITE_REF= "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update";
+
+    public void retrieveProject(String projectRef, String providerType) {
         Map<String, Set<String>> projectRefs= new HashMap<String, Set<String>>();
 
-        projectRefs.put(UPDATE_SITE_PROVIDER, Collections.singleton(UPDATE_SITE_REF));
+        projectRefs.put(providerType, Collections.singleton(projectRef));
 
         retrieveProjectsWithProgress(projectRefs);
     }
