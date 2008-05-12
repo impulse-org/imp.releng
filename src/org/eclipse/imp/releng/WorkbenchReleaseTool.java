@@ -192,17 +192,21 @@ public class WorkbenchReleaseTool extends ReleaseTool {
     }
 
     @Override
-    public void retrieveFeatures() {
+    public boolean retrieveFeatures() {
         collectMetaData(true);
 
         ConfirmUpdateSitesDialog d= new ConfirmUpdateSitesDialog(getShell(), fUpdateSiteInfos);
 
         if (d.open() != Dialog.OK) {
-            return;
+            return false;
         }
 
         List<UpdateSiteInfo> sites= d.getSites();
-        Map<String,Set<String>> featureProjectMap= new HashMap<String,Set<String>>();
+        return retrieveFeatures(sites);
+    }
+
+	public boolean retrieveFeatures(List<UpdateSiteInfo> sites) {
+		Map<String,Set<String>> featureProjectMap= new HashMap<String,Set<String>>();
 
         for(UpdateSiteInfo siteInfo: sites) {
             IProject updateProject= siteInfo.fProject;
@@ -217,24 +221,30 @@ public class WorkbenchReleaseTool extends ReleaseTool {
 
         if (cprd.open() == Dialog.OK) {
             retrieveProjectsWithProgress(featureProjectMap);
+            return true;
         }
-    }
+        return false;
+	}
 
     @Override
-    public void retrievePlugins() {
+    public boolean retrievePlugins() {
         collectMetaData(true);
 
         if (fFeatureInfos.size() == 0)
-            return;
+            return false;
 
         SelectFeatureInfosDialog d= new SelectFeatureInfosDialog(getShell(), fFeatureInfos);
 
         if (d.open() != Dialog.OK)
-            return;
+            return false;
 
         List<FeatureInfo> featureInfos= d.getSelectedFeatures();
 
-        final Map<String,Set<String>> pluginProjectRefs= new HashMap<String,Set<String>>();
+        return retrievePlugins(featureInfos);
+    }
+
+	public boolean retrievePlugins(List<FeatureInfo> featureInfos) {
+		final Map<String,Set<String>> pluginProjectRefs= new HashMap<String,Set<String>>();
 
         for(FeatureInfo featureInfo: featureInfos) {
             IProject featureProject= featureInfo.fProject;
@@ -257,6 +267,8 @@ public class WorkbenchReleaseTool extends ReleaseTool {
 
         if (cprd.open() == Dialog.OK) {
             retrieveProjectsWithProgress(pluginProjectRefs);
+            return true;
         }
-    }
+        return false;
+	}
 }
