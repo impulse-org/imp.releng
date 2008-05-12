@@ -12,7 +12,6 @@
 
 package org.eclipse.imp.releng.actions;
 
-import org.eclipse.imp.releng.WorkbenchReleaseTool;
 import org.eclipse.imp.releng.dialogs.RetrieveUpdateSiteDialog;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
