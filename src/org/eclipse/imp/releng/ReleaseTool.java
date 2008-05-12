@@ -244,8 +244,9 @@ public abstract class ReleaseTool {
         }
     }
 
-    protected void collectMetaData(boolean allFeatures) {
-	fFeatureInfos.clear();
+    public void collectMetaData(boolean allFeatures) {
+    	fUpdateSiteInfos.clear();
+    	fFeatureInfos.clear();
         fPluginInfos.clear();
         fExclusions.clear();
         fCanProceed= true; // assume the best until proven otherwise
@@ -1033,9 +1034,9 @@ public abstract class ReleaseTool {
 //        }
     }
 
-    public abstract void retrieveFeatures();
+    public abstract boolean retrieveFeatures();
 
-    public abstract void retrievePlugins();
+    public abstract boolean retrievePlugins();
 
     protected void getProjectsFromRefs(Map<String, Set<String>> projectRefs, IProgressMonitor monitor) {
         MessageConsoleStream msgStream= ReleaseEngineeringPlugin.getMsgStream();
