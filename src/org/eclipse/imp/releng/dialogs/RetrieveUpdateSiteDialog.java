@@ -69,6 +69,7 @@ public class RetrieveUpdateSiteDialog extends Dialog {
     	sUpdateSiteMap.put("IMP", new PrefabDescriptor("SVN", "dev.eclipse.org", "/svnroot/technology/org.eclipse.imp", "org.eclipse.imp.update"));
     	sUpdateSiteMap.put("LPG", new PrefabDescriptor("CVS", "lpg.cvs.sourceforge.net", "/cvsroot/lpg", "lpg.update"));
     	sUpdateSiteMap.put("X10DT", new PrefabDescriptor("CVS", "eclipse-imp.cvs.sourceforge.net", "/cvsroot/eclipse-imp", "org.eclipse.imp.x10dt.update"));
+        sUpdateSiteMap.put("RelEng", new PrefabDescriptor("SVN", "dev.eclipse.org", "/svnroot/technology/org.eclipse.imp", "org.eclipse.imp.releng.update"));
     	sUpdateSiteMap.put("Custom", new PrefabDescriptor("CVS", "my.cvs.server.org", "/cvsroot/myrepo", "my.update.project"));
     }
 
