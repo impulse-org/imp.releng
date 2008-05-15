@@ -51,7 +51,7 @@ public class CopyrightAdder {
     private class JavaEPLCopyrightAdder implements ICopyrightAdder {
         private static final String COPYRIGHT_NOTICE= 
                 "/*******************************************************************************\n" +
-                "* Copyright (c) 2007 IBM Corporation.\n" +
+                "* Copyright (c) 2008 IBM Corporation.\n" +
                 "* All rights reserved. This program and the accompanying materials\n" +
                 "* are made available under the terms of the Eclipse Public License v1.0\n" +
                 "* which accompanies this distribution, and is available at\n" +
