@@ -24,6 +24,7 @@ import org.eclipse.imp.releng.metadata.UpdateSiteInfo;
 import org.eclipse.imp.releng.metadata.UpdateSiteInfo.FeatureRef;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -104,6 +105,12 @@ public class RetrieveUpdateSiteDialog extends Dialog {
                 if (fRetrieveFeatures) {
                     List<UpdateSiteInfo> siteInfos= new ArrayList<UpdateSiteInfo>();
                     UpdateSiteInfo siteInfo= releaseTool.findSiteByName(fUpdateSiteProjectName);
+
+                    if (siteInfo == null) {
+                        MessageDialog.openError(getParentShell(), "Update site project missing", "The update site project cannot be found. Presumably the download failed. Please make sure you have the appropriate repository client plugins (CVS, SVN).");
+                        return;
+                    }
+
                     siteInfos.add(siteInfo);
 
                     if (!releaseTool.retrieveFeatures(siteInfos)) {
