@@ -74,6 +74,13 @@
                label="Add New Feature Versions to Update Site"
                menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
                style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.BuildReleaseAction"
+               id="org.eclipse.imp.releng.buildRelease"
+               label="Build Release"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
+               style="push">
+         </action>
       </actionSet>
    </extension>
    <extension

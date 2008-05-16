@@ -13,6 +13,7 @@
 package org.eclipse.imp.releng;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,10 +21,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.eclipse.ant.core.AntCorePlugin;
+import org.eclipse.ant.core.AntCorePreferences;
+import org.eclipse.ant.core.IAntClasspathEntry;
+import org.eclipse.ant.core.Task;
+import org.eclipse.ant.internal.core.AntClasspathEntry;
+import org.eclipse.ant.internal.ui.launchConfigurations.AntLaunchShortcut;
+import org.eclipse.ant.internal.ui.preferences.AntPreferencePage;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.Path;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.debug.core.ILaunchConfigurationType;
+import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.imp.releng.dialogs.ConfirmChangedPluginsDialog;
 import org.eclipse.imp.releng.dialogs.ConfirmDirtyFilesDialog;
 import org.eclipse.imp.releng.dialogs.ConfirmProjectRetrievalDialog;
@@ -49,6 +63,7 @@ import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.MessageConsoleStream;
+import org.osgi.framework.Bundle;
 
 public class WorkbenchReleaseTool extends ReleaseTool {
     public static void dumpRecentRevisionsInfo(PluginInfo pi, MessageConsoleStream mcs, IFileHistoryProvider histProvider, ResourceChange rc, IFile file) {
@@ -243,8 +258,8 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         return retrievePlugins(featureInfos);
     }
 
-	public boolean retrievePlugins(List<FeatureInfo> featureInfos) {
-		final Map<String,Set<String>> pluginProjectRefs= new HashMap<String,Set<String>>();
+    public boolean retrievePlugins(List<FeatureInfo> featureInfos) {
+        final Map<String,Set<String>> pluginProjectRefs= new HashMap<String,Set<String>>();
 
         for(FeatureInfo featureInfo: featureInfos) {
             IProject featureProject= featureInfo.fProject;
@@ -270,5 +285,76 @@ public class WorkbenchReleaseTool extends ReleaseTool {
             return true;
         }
         return false;
-	}
+    }
+
+    public void buildRelease() {
+        collectMetaData(true);
+
+        ConfirmUpdateSitesDialog d= new ConfirmUpdateSitesDialog(getShell(), fUpdateSiteInfos);
+
+        if (d.open() != Dialog.OK) {
+            return;
+        }
+
+        AntCorePreferences acp= AntCorePlugin.getPlugin().getPreferences();
+        maybeCreateImpAntClasspathEntry(acp);
+        maybeCreateImpForTaskEntry(acp);
+        
+        List<UpdateSiteInfo> sites= d.getSites();
+
+        for(UpdateSiteInfo updateSiteInfo : sites) {
+            IFile buildScript= updateSiteInfo.fProject.getFile("exportUpdate.xml");
+
+            if (!buildScript.exists()) {
+                MessageDialog.openError(getShell(), "Unable to find build script", "The build script exportUpdate.xml does not exist in project " + updateSiteInfo.fProject.getName());
+            }
+            // There doesn't appear to be enough published API to initiate an Ant build programmatically.
+            AntLaunchShortcut als= new AntLaunchShortcut();
+            als.setShowDialog(false);
+            als.launch(buildScript, ILaunchManager.RUN_MODE, "build.update.zip");
+        }
+    }
+
+    private void maybeCreateImpAntClasspathEntry(AntCorePreferences acp) {
+        IAntClasspathEntry[] addlCPEntries= acp.getAdditionalClasspathEntries();
+
+        for(int i= 0; i < addlCPEntries.length; i++) {
+            IAntClasspathEntry entry= addlCPEntries[i];
+            if (entry.getEntryURL().getPath().contains("ant-imp.jar")) {
+                return;
+            }
+        }
+        if (!MessageDialog.openConfirm(getShell(), "Ant configuration missing classpath entry for 'for' task", "Add the necessary classpath entry?")) {
+            return;
+        }
+        try {
+            // There doesn't appear to be any published API to create an IAntClasspathEntry.
+            IAntClasspathEntry[] newEntries= new IAntClasspathEntry[addlCPEntries.length + 1];
+            Bundle relengBundle= Platform.getBundle(ReleaseEngineeringPlugin.kPluginID);
+            URL jarLoc= FileLocator.toFileURL(FileLocator.find(relengBundle, new Path("ant-imp.jar"), null));
+
+            System.arraycopy(addlCPEntries, 0, newEntries, 0, addlCPEntries.length);
+            newEntries[addlCPEntries.length]= new AntClasspathEntry(jarLoc);
+            acp.setAdditionalClasspathEntries(newEntries);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void maybeCreateImpForTaskEntry(AntCorePreferences acp) {
+        List<Task> allTasks= acp.getTasks();
+
+        for(Task task : allTasks) {
+            if (task.getTaskName().equals("for")) {
+                return;
+            }
+        }
+        if (!MessageDialog.openConfirm(getShell(), "Ant configuration missing necessary task entry", "Add the necessary entry for the 'for' task?")) {
+            return;
+        }
+        Task newTask= new Task();
+        newTask.setClassName("org.eclipse.imp.ant.ForTask");
+        newTask.setTaskName("for");
+        acp.setCustomTasks(new Task[] { newTask });
+    }
 }
