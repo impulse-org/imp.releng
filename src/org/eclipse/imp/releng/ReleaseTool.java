@@ -1038,9 +1038,11 @@ public abstract class ReleaseTool {
 
     public abstract boolean retrievePlugins();
 
+    // TODO Wrap everything in a WorkspaceModifyOperation (which collects and defers workspace modification events), instead of disabling auto-build
     protected void getProjectsFromRefs(Map<String, Set<String>> projectRefs, IProgressMonitor monitor) {
         MessageConsoleStream msgStream= ReleaseEngineeringPlugin.getMsgStream();
 
+//      monitor.beginTask("Retrieving projects", collectSetsFromMap(projectRefs).size() * 10);
         monitor.beginTask("Retrieving projects", collectSetsFromMap(projectRefs).size());
 
         try {
@@ -1059,7 +1061,8 @@ public abstract class ReleaseTool {
                     }
 
                     String projectName= projectSetCapability.getProject(projectRef);
-
+//                  IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 10);
+//                  subMonitor.beginTask("Retrieving " + projectName, 10);
                     monitor.subTask("Retrieving " + projectName);
                     try {
                         projectSetCapability.addToWorkspace(new String[] { projectRef }, new ProjectSetSerializationContext(), monitor);
@@ -1099,7 +1102,7 @@ public abstract class ReleaseTool {
         } catch (InvocationTargetException e) {
             postError("Exception encountered while retrieving projects: " + e.getMessage(), e);
         } catch (InterruptedException e) {
-            postError("Exception encountered while retrieving projects: " + e.getMessage(), e);
+            // do nothing; user canceled the operation...
         }
 
         if (fTemporarilySuppressAutoBuild && wasAutoBuilding) {
