@@ -65,7 +65,7 @@ public class ReleaseEngineeringPlugin extends AbstractUIPlugin {
         plugin= null;
     }
 
-    private static final String VERSION_CONSOLE= "Version Manipulation";
+    private static final String RELEASE_CONSOLE= "Release Engineering";
 
     private MessageConsole findConsole() {
         MessageConsole myConsole= null;
@@ -73,11 +73,11 @@ public class ReleaseEngineeringPlugin extends AbstractUIPlugin {
         IConsole[] consoles= consoleManager.getConsoles();
         for(int i= 0; i < consoles.length; i++) {
             IConsole console= consoles[i];
-            if (console.getName().equals(VERSION_CONSOLE))
+            if (console.getName().equals(RELEASE_CONSOLE))
                 myConsole= (MessageConsole) console;
         }
         if (myConsole == null) {
-            myConsole= new MessageConsole(VERSION_CONSOLE, null);
+            myConsole= new MessageConsole(RELEASE_CONSOLE, null);
             consoleManager.addConsoles(new IConsole[] { myConsole });
         }
         consoleManager.showConsoleView(myConsole);
