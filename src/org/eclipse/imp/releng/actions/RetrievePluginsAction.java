@@ -25,7 +25,7 @@ public class RetrievePluginsAction implements IWorkbenchWindowActionDelegate {
     public void init(IWorkbenchWindow window) { }
 
     public void run(IAction action) {
-        new WorkbenchReleaseTool().retrievePlugins();
+        new WorkbenchReleaseTool().retrievePlugins(false);
     }
 
     public void selectionChanged(IAction action, ISelection selection) { }

@@ -44,10 +44,13 @@ public class RetrieveUpdateSiteDialog extends Dialog {
 	private Text fRepoServerText;
 	private Text fRepoPathText;
 	private Text fProjectNameText;
+	private Button fAnonButton;
 	private String fProvider;
 	private String fRepoServer;
 	private String fRepoPath;
 	private String fUpdateSiteProjectName;
+	private boolean fAnonAccess;
+
 	private boolean fRetrieveFeatures;
 	private boolean fRetrievePlugins;
 
@@ -95,13 +98,17 @@ public class RetrieveUpdateSiteDialog extends Dialog {
         proceedButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
+                retrieveProjects();
+            }
+            private void retrieveProjects() {
                 String providerRef= sProviderMap.get(fProvider);
-                String updateSiteProjectRef= buildProjectRef(fProvider, fRepoServer, fRepoPath, fUpdateSiteProjectName);
-                WorkbenchReleaseTool releaseTool = new WorkbenchReleaseTool();
+                String updateSiteProjectRef= buildProjectRef(fProvider, fRepoServer, fRepoPath, fUpdateSiteProjectName, fAnonAccess);
+                WorkbenchReleaseTool releaseTool= new WorkbenchReleaseTool();
 
                 releaseTool.retrieveProject(updateSiteProjectRef, providerRef);
 
                 releaseTool.collectMetaData(true); // Now that we have the update site, rescan the metadata to collect the set of features
+
                 if (fRetrieveFeatures) {
                     List<UpdateSiteInfo> siteInfos= new ArrayList<UpdateSiteInfo>();
                     UpdateSiteInfo siteInfo= releaseTool.findSiteByName(fUpdateSiteProjectName);
@@ -113,7 +120,7 @@ public class RetrieveUpdateSiteDialog extends Dialog {
 
                     siteInfos.add(siteInfo);
 
-                    if (!releaseTool.retrieveFeatures(siteInfos)) {
+                    if (!releaseTool.retrieveFeatures(siteInfos, fAnonAccess)) {
                         return;
                     }
 
@@ -124,17 +131,27 @@ public class RetrieveUpdateSiteDialog extends Dialog {
                         for(FeatureRef featureRef: siteInfo.fFeatureRefs) {
                             featureInfos.add(releaseTool.findFeatureInfo(featureRef.getID()));
                         }
-                        releaseTool.retrievePlugins(featureInfos);
+                        releaseTool.retrievePlugins(featureInfos, fAnonAccess);
                     }
                 }
             }
-            private String buildProjectRef(String providerType, String repoServer, String repoPath, String projectName) {
+            private String buildProjectRef(String providerType, String repoServer, String repoPath, String projectName, boolean anonAccess) {
                 if (providerType.equals("CVS")) {
-                    // 1.0,:extssh:orquesta.watson.ibm.com:/usr/src/cvs/JDT,com.ibm.watson.demo.ecoop2005.JLex,com.ibm.watson.demo.ecoop2005.JLex"
-                    return "1.0,:extssh:" + repoServer + ":" + repoPath + "," + projectName + "," + projectName;
+                    if (anonAccess) {
+                        // 1.0,:pserver:anonymous@orquesta.watson.ibm.com:/usr/src/cvs/JDT,com.ibm.watson.demo.ecoop2005.JLex,com.ibm.watson.demo.ecoop2005.JLex"
+                        return "1.0,:pserver:anonymous@" + repoServer + ":" + repoPath + "," + projectName + "," + projectName;
+                    } else {
+                        // 1.0,:extssh:orquesta.watson.ibm.com:/usr/src/cvs/JDT,com.ibm.watson.demo.ecoop2005.JLex,com.ibm.watson.demo.ecoop2005.JLex"
+                        return "1.0,:extssh:" + repoServer + ":" + repoPath + "," + projectName + "," + projectName;
+                    }
                 } else if (providerType.equals("SVN")) {
-                    // "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update"
-                    return "0.9.3,https://" + repoServer + repoPath + "/" + projectName + "/trunk," + projectName;
+                    if (anonAccess) {
+                        // "0.9.3,http://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update"
+                        return "0.9.3,http://" + repoServer + repoPath + "/" + projectName + "/trunk," + projectName;
+                    } else {
+                        // "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update"
+                        return "0.9.3,https://" + repoServer + repoPath + "/" + projectName + "/trunk," + projectName;
+                    }
                 }
                 throw new IllegalArgumentException("huh?");
             }
@@ -218,6 +235,17 @@ public class RetrieveUpdateSiteDialog extends Dialog {
             }
         });
 
+        final Button anonAccessCkbox= new Button(area, SWT.CHECK);
+        anonAccessCkbox.setText("Use anonymous repository access");
+        anonAccessCkbox.addSelectionListener(new SelectionListener() {
+            public void widgetDefaultSelected(SelectionEvent e) { }
+            public void widgetSelected(SelectionEvent e) {
+                setAnonAccess(anonAccessCkbox.getSelection());
+            }
+        });
+
+        /*Label dummy=*/ new Label(area, SWT.NONE);
+
         final Button retrieveFeaturesCkbox= new Button(area, SWT.CHECK);
         retrieveFeaturesCkbox.setText("Also retrieve feature projects");
         retrieveFeaturesCkbox.addSelectionListener(new SelectionListener() {
@@ -242,6 +270,10 @@ public class RetrieveUpdateSiteDialog extends Dialog {
         fillPrefabValues("IMP");
         area.pack();
         return area;
+    }
+
+    protected void setAnonAccess(boolean yesNo) {
+        fAnonAccess= yesNo;
     }
 
     protected void setRetrieveFeatures(boolean yesNo) {

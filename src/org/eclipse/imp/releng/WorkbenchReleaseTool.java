@@ -215,7 +215,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
     }
 
     @Override
-    public boolean retrieveFeatures() {
+    public boolean retrieveFeatures(boolean anonAccess) {
         collectMetaData(true);
 
         ConfirmUpdateSitesDialog d= new ConfirmUpdateSitesDialog(getShell(), fUpdateSiteInfos);
@@ -225,15 +225,15 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         }
 
         List<UpdateSiteInfo> sites= d.getSites();
-        return retrieveFeatures(sites);
+        return retrieveFeatures(sites, anonAccess);
     }
 
-	public boolean retrieveFeatures(List<UpdateSiteInfo> sites) {
+	public boolean retrieveFeatures(List<UpdateSiteInfo> sites, boolean anonAccess) {
 		Map<String,Set<String>> featureProjectMap= new HashMap<String,Set<String>>();
 
         for(UpdateSiteInfo siteInfo: sites) {
             IProject updateProject= siteInfo.fProject;
-            IFile featureSetFile= updateProject.getFile("features.psf");
+            IFile featureSetFile= updateProject.getFile(anonAccess ? "featuresAnon.psf" : "features.psf");
             Map<String,Set<String>> providerToRefs= readProjectSet(featureSetFile);
 
             mergeMapInto(providerToRefs, featureProjectMap);
@@ -250,7 +250,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
 	}
 
     @Override
-    public boolean retrievePlugins() {
+    public boolean retrievePlugins(boolean anonAccess) {
         collectMetaData(true);
 
         if (fFeatureInfos.size() == 0)
@@ -263,20 +263,20 @@ public class WorkbenchReleaseTool extends ReleaseTool {
 
         List<FeatureInfo> featureInfos= d.getSelectedFeatures();
 
-        return retrievePlugins(featureInfos);
+        return retrievePlugins(featureInfos, anonAccess);
     }
 
-    public boolean retrievePlugins(List<FeatureInfo> featureInfos) {
+    public boolean retrievePlugins(List<FeatureInfo> featureInfos, boolean anonAccess) {
         final Map<String,Set<String>> pluginProjectRefs= new HashMap<String,Set<String>>();
 
         for(FeatureInfo featureInfo: featureInfos) {
             IProject featureProject= featureInfo.fProject;
-            IFile projectSetFile= featureProject.getFile("plugins.psf");
+            IFile projectSetFile= featureProject.getFile(anonAccess ? "pluginsAnon.psf" : "plugins.psf");
             Map<String,Set<String>> providerToRefs= readProjectSet(projectSetFile);
 
             mergeMapInto(providerToRefs, pluginProjectRefs);
 
-            IFile extraProjectSetFile= featureProject.getFile("extraProjects.psf");
+            IFile extraProjectSetFile= featureProject.getFile(anonAccess ? "extraProjectsAnon.psf" : "extraProjects.psf");
 
             if (extraProjectSetFile.exists()) {
                 Map<String,Set<String>> extraProviderToRefs= readProjectSet(extraProjectSetFile);

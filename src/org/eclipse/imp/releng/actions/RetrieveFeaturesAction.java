@@ -25,7 +25,7 @@ public class RetrieveFeaturesAction implements IWorkbenchWindowActionDelegate {
     public void init(IWorkbenchWindow window) { }
 
     public void run(IAction action) {
-        new WorkbenchReleaseTool().retrieveFeatures();
+        new WorkbenchReleaseTool().retrieveFeatures(false);
     }
 
     public void selectionChanged(IAction action, ISelection selection) { }

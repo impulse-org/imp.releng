@@ -1034,9 +1034,9 @@ public abstract class ReleaseTool {
 //        }
     }
 
-    public abstract boolean retrieveFeatures();
+    public abstract boolean retrieveFeatures(boolean anonAccess);
 
-    public abstract boolean retrievePlugins();
+    public abstract boolean retrievePlugins(boolean anonAccess);
 
     // TODO Wrap everything in a WorkspaceModifyOperation (which collects and defers workspace modification events), instead of disabling auto-build
     protected void getProjectsFromRefs(Map<String, Set<String>> projectRefs, IProgressMonitor monitor) {
