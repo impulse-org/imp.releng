@@ -152,7 +152,7 @@ public abstract class ReleaseTool {
             }
 
             IProject featureProject= fi.fProject;
-            writeProjectSet(repoRefMap, featureProject, "feature.psf");
+            writeProjectSet(repoRefMap, featureProject, "plugins.psf");
         }
     }
 
