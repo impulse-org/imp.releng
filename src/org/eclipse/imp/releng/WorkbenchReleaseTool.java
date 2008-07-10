@@ -12,11 +12,17 @@
 
 package org.eclipse.imp.releng;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,16 +33,17 @@ import org.eclipse.ant.core.IAntClasspathEntry;
 import org.eclipse.ant.core.Task;
 import org.eclipse.ant.internal.core.AntClasspathEntry;
 import org.eclipse.ant.internal.ui.launchConfigurations.AntLaunchShortcut;
-import org.eclipse.ant.internal.ui.preferences.AntPreferencePage;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
-import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.imp.releng.dialogs.ConfirmChangedPluginsDialog;
 import org.eclipse.imp.releng.dialogs.ConfirmDirtyFilesDialog;
@@ -50,6 +57,7 @@ import org.eclipse.imp.releng.metadata.PluginInfo;
 import org.eclipse.imp.releng.metadata.UpdateSiteInfo;
 import org.eclipse.imp.releng.metadata.PluginInfo.ChangeReason;
 import org.eclipse.imp.releng.metadata.PluginInfo.ResourceChange;
+import org.eclipse.imp.releng.metadata.UpdateSiteInfo.FeatureRef;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
@@ -356,5 +364,159 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         newTask.setClassName("org.eclipse.imp.ant.ForTask");
         newTask.setTaskName("for");
         acp.setCustomTasks(new Task[] { newTask });
+    }
+
+    private static class TemplateInfo {
+        private final String fTemplateName;
+        private final String fDestPath;
+
+        public TemplateInfo(String templateName, String destPath) {
+            fTemplateName= templateName;
+            fDestPath= destPath;
+        }
+        public String getTemplateName() {
+            return fTemplateName;
+        }
+        public String getDestPath() {
+            return fDestPath;
+        }
+    }
+
+    private final static List<TemplateInfo> sPluginTemplates= new ArrayList<TemplateInfo>();
+    private final static List<TemplateInfo> sFeatureTemplates= new ArrayList<TemplateInfo>();
+    private final static List<TemplateInfo> sUpdateTemplates= new ArrayList<TemplateInfo>();
+
+    static {
+        sPluginTemplates.add(new TemplateInfo("exportPlugin.xml", ""));
+        sFeatureTemplates.add(new TemplateInfo("buildCommon.xml", ""));
+        sFeatureTemplates.add(new TemplateInfo("exportFeature.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("buildCommon.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("buildFeatureCommon.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("buildPluginCommon.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("exportUpdate.xml", ""));
+    }
+
+    public void addReleaseScripts() {
+        collectMetaData(true);
+
+        if (fFeatureInfos.size() == 0)
+            return;
+
+        Bundle relengBundle= ReleaseEngineeringPlugin.getInstance().getBundle();
+        List<UpdateSiteInfo> updateSites= confirmUpdateSites();
+        IProgressMonitor monitor= new NullProgressMonitor();
+
+        for(UpdateSiteInfo updateSiteInfo : updateSites) {
+            Map<String,String> updateSubs= new HashMap<String, String>();
+            StringBuilder sb= new StringBuilder();
+
+            for(FeatureRef featRef: updateSiteInfo.fFeatureRefs) {
+                if (sb.length() > 0) { sb.append(","); }
+                sb.append(featRef.getID());
+            }
+            String featureNames= sb.toString();
+
+            updateSubs.put("%%UPDATE_PROJ_NAME%%", updateSiteInfo.fProject.getName());
+            updateSubs.put("%%FEATURE_NAME_LIST%%", featureNames);
+
+            for(TemplateInfo updateTemplate: sUpdateTemplates) {
+                instantiateTemplate(updateTemplate.getTemplateName(), "updateTemplates/",
+                        updateSiteInfo.fProject, updateTemplate.getDestPath(),
+                        updateSubs, relengBundle, monitor);
+            }
+            for(FeatureRef featureRef: updateSiteInfo.fFeatureRefs) {
+                FeatureInfo featureInfo= findFeatureInfo(featureRef.getID());
+                Map<String,String> featureSubs= new HashMap<String, String>();
+
+                featureSubs.put("%%FEATURE_ID%%", featureRef.getID());
+                featureSubs.put("%%FEATURE_PROJ_NAME%%", featureInfo.fProject.getName());
+                featureSubs.putAll(updateSubs);
+
+                for(TemplateInfo featureTemplate: sFeatureTemplates) {
+                    instantiateTemplate(featureTemplate.getTemplateName(), "featureTemplates/",
+                            featureInfo.fProject, featureTemplate.getDestPath(),
+                            featureSubs, relengBundle, monitor);
+                }
+
+                for(PluginInfo pluginInfo: featureInfo.fPluginInfos) {
+                    IProject pluginProject= pluginInfo.fManifest.getProject();
+                    Map<String,String> pluginSubs= new HashMap<String, String>();
+
+                    pluginSubs.put("%%PLUGIN_ID%%", pluginInfo.fPluginID);
+                    pluginSubs.putAll(featureSubs);
+
+                    for(TemplateInfo pluginTemplate: sPluginTemplates) {
+                        instantiateTemplate(pluginTemplate.getTemplateName(), "pluginTemplates/",
+                                pluginProject, pluginTemplate.getDestPath(),
+                                pluginSubs, relengBundle, monitor);
+                    }
+                }
+            }
+        }
+    }
+
+    private void instantiateTemplate(String templateName, String templatePath, IProject destProject, String destPath,
+            Map<String,String> substitutions, Bundle relengBundle, IProgressMonitor monitor) {
+        try {
+            URL localURL= FileLocator.toFileURL(FileLocator.find(relengBundle, new Path(templatePath + templateName), null));
+            String path= localURL.getPath();
+            FileInputStream fis= new FileInputStream(path);
+            DataInputStream is= new DataInputStream(fis);
+            byte bytes[]= new byte[fis.available()];
+
+            is.readFully(bytes);
+            is.close();
+            fis.close();
+
+            String templateSrc= new String(bytes);
+            String substSrc= performSubstitutions(templateSrc, substitutions);
+            IFile destFile= destProject.getFile(new Path(destPath + templateName));
+
+            if (destFile.exists()) {
+                destFile.setContents(new ByteArrayInputStream(substSrc.getBytes()), true, true, monitor);
+            } else {
+                if (destPath.length() > 0) {
+                    createSubFolders(destPath, destProject, monitor);
+                }
+                destFile.create(new ByteArrayInputStream(substSrc.getBytes()), true, monitor);
+            }
+        } catch (IOException e) {
+            ReleaseEngineeringPlugin.getMsgStream().println(e.getMessage());
+        } catch (CoreException e) {
+            ReleaseEngineeringPlugin.getMsgStream().println(e.getMessage());
+        }
+    }
+
+    public static String performSubstitutions(String contents, Map<String,String> replacements) {
+        StringBuffer buffer= new StringBuffer(contents);
+        
+        for(Iterator<String> iter= replacements.keySet().iterator(); iter.hasNext();) {
+            String key= iter.next();
+            String value= replacements.get(key);
+        
+            if (value != null)
+                replace(buffer, key, value);
+        }
+        return buffer.toString();
+    }
+
+    public static void replace(StringBuffer sb, String target, String substitute) {
+        for(int index= sb.indexOf(target); index != -1; index= sb.indexOf(target))
+            sb.replace(index, index + target.length(), substitute);
+    }
+
+    public static void createSubFolders(String folder, IProject project, IProgressMonitor monitor) throws CoreException {
+        String[] subFolderNames= folder.split("[\\" + File.separator + "\\/]");
+        String subFolderStr= "";
+
+        for(int i= 0; i < subFolderNames.length; i++) {
+            String childPath= subFolderStr + "/" + subFolderNames[i];
+            Path subFolderPath= new Path(childPath);
+            IFolder subFolder= project.getFolder(subFolderPath);
+
+            if (!subFolder.exists())
+                subFolder.create(true, true, monitor);
+            subFolderStr= childPath;
+        }
     }
 }

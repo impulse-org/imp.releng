@@ -33,6 +33,13 @@
                menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
                style="push"/>
          <action
+               class="org.eclipse.imp.releng.actions.BuildReleaseAction"
+               id="org.eclipse.imp.releng.buildRelease"
+               label="Build Release"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
+               style="push">
+         </action>
+         <action
                class="org.eclipse.imp.releng.actions.RetrieveUpdateSiteAction"
                id="org.eclipse.imp.releaseEngineering.retrieveUpdateSite"
                label="Retrieve Update Site Project"
@@ -75,11 +82,10 @@
                menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
                style="push"/>
          <action
-               class="org.eclipse.imp.releng.actions.BuildReleaseAction"
-               id="org.eclipse.imp.releng.buildRelease"
-               label="Build Release"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
-               style="push">
+               class="org.eclipse.imp.releng.actions.AddReleaseScriptsAction"
+               id="org.eclipse.imp.releng.addScriptsAction"
+               label="Add Release Scripts"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup">
          </action>
       </actionSet>
    </extension>
