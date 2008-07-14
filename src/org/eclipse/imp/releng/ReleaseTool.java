@@ -262,19 +262,19 @@ public abstract class ReleaseTool {
     }
 
     private void collectVersionInfo() {
-	readOldPluginVersionMaps();
+        readOldPluginVersionMaps();
         buildNewPluginVersionMaps();
         scanPluginsForDiffs();
     }
 
     private void computeNewVersions() {
-	incrementPluginInfoVersions();
+        incrementPluginInfoVersions();
         incrementFeatureVersions();
         fixupFeatureRequires();
     }
 
     private void performAllChanges() {
-	List<IFile> changedFiles= new ArrayList<IFile>();
+        List<IFile> changedFiles= new ArrayList<IFile>();
         List<Change> changes= new ArrayList<Change>();
 
         writeNewPluginVersionMaps(changedFiles);
@@ -423,7 +423,6 @@ public abstract class ReleaseTool {
     private void incrementFeatureVersions() {
         ReleaseEngineeringPlugin.getMsgStream().println("***");
         for(FeatureInfo fi: fFeatureInfos) {
-            Document manifestDoc= fi.fManifestDoc;
             String featureID= fi.fFeatureID;
             String oldFeatureVersion= fi.fFeatureVersion;
             String newFeatureVersion= incrementVersionRelease(oldFeatureVersion);
@@ -599,10 +598,10 @@ public abstract class ReleaseTool {
      * contents. Assumes that the workspace is clean wrt the repository.
      */
     private void buildNewPluginVersionMaps() {
-	VersionScanner scanner= new VersionScanner();
+        VersionScanner scanner= new VersionScanner();
         Set<IFile> dirtyFiles= new TreeSet<IFile>(fFileComparator);
 
-	for(PluginInfo pi: fPluginInfos) {
+        for(PluginInfo pi : fPluginInfos) {
             String pluginID= pi.fPluginID;
             IProject pluginProject= fWSRoot.getProject(pluginID);
 
@@ -631,12 +630,12 @@ public abstract class ReleaseTool {
             dirtyFiles.addAll(scanner.scanFolder("icons", pluginProject, fileHistProvider, fileVersionMap));
             dirtyFiles.addAll(scanner.scanFolder("templates", pluginProject, fileHistProvider, fileVersionMap));
             for(IPath path : buildItems) {
-		if (pluginProject.getFolder(path).exists()) {
+                if (pluginProject.getFolder(path).exists()) {
                     dirtyFiles.addAll(scanner.scanFolder(path.toPortableString(), pluginProject, fileHistProvider, fileVersionMap));
-		} else if (pluginProject.getFile(path).exists()) {
+                } else if (pluginProject.getFile(path).exists()) {
                     dirtyFiles.addAll(scanner.checkFile(path.toPortableString(), pluginProject, fileHistProvider, fileVersionMap));
-		}
-	    }
+                }
+            }
             pi.fNewMap= fileVersionMap;
         }
         fCanProceed= fCanProceed && confirmDirtyFiles(dirtyFiles);
