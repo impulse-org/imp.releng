@@ -90,6 +90,12 @@ public class RetrieveUpdateSiteDialog extends Dialog {
     }
 
     @Override
+    protected void configureShell(Shell newShell) {
+        super.configureShell(newShell);
+        newShell.setText("Select update site");
+    }
+
+    @Override
     protected void createButtonsForButtonBar(Composite parent) {
         // create OK and Cancel buttons by default
     	Button proceedButton= createButton(parent, IDialogConstants.OK_ID, "Proceed", true);
@@ -243,6 +249,7 @@ public class RetrieveUpdateSiteDialog extends Dialog {
                 setAnonAccess(anonAccessCkbox.getSelection());
             }
         });
+        anonAccessCkbox.setSelection(true);
 
         /*Label dummy=*/ new Label(area, SWT.NONE);
 
@@ -254,6 +261,7 @@ public class RetrieveUpdateSiteDialog extends Dialog {
                 setRetrieveFeatures(retrieveFeaturesCkbox.getSelection());
             }
         });
+        retrieveFeaturesCkbox.setSelection(fRetrieveFeatures= true);
 
         /*Label dummy=*/ new Label(area, SWT.NONE);
 
@@ -265,6 +273,7 @@ public class RetrieveUpdateSiteDialog extends Dialog {
                 setRetrievePlugins(retrievePluginsCkbox.getSelection());
             }
         });
+        retrievePluginsCkbox.setSelection(fRetrievePlugins= true);
 
         prefabCombo.select(0);
         fillPrefabValues("IMP");
