@@ -40,6 +40,12 @@ public class SelectFeatureProjectsDialog extends Dialog {
     }
 
     @Override
+    protected void configureShell(Shell newShell) {
+        super.configureShell(newShell);
+        newShell.setText("Select features");
+    }
+
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite area= (Composite) super.createDialogArea(parent);
         Label header= new Label(area, SWT.NULL);

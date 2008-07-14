@@ -52,6 +52,12 @@ public class SelectFeatureInfosDialog extends Dialog {
                 });
     }
 
+    @Override
+    protected void configureShell(Shell newShell) {
+        super.configureShell(newShell);
+        newShell.setText("Select features");
+    }
+
     public List<FeatureInfo> getSelectedFeatures() {
         return fFeatures;
     }

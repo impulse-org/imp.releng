@@ -43,6 +43,12 @@ public class ConfirmDirtyFilesDialog extends Dialog {
     }
 
     @Override
+    protected void configureShell(Shell newShell) {
+        super.configureShell(newShell);
+        newShell.setText("Confirm dirty files");
+    }
+
+    @Override
     protected void createButtonsForButtonBar(Composite parent) {
         // create OK and Cancel buttons by default
         createButton(parent, IDialogConstants.OK_ID, "Proceed with dirty files", true);
