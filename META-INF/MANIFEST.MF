@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: IMP Release Engineering Tools (Incubation)
 Bundle-SymbolicName: org.eclipse.imp.releng;singleton:=true
-Bundle-Version: 0.1.31
+Bundle-Version: 0.1.32
 Bundle-Activator: org.eclipse.imp.releng.ReleaseEngineeringPlugin
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
@@ -20,7 +20,9 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.ant.core,
  org.eclipse.ant.ui,
  org.eclipse.debug.core,
- org.eclipse.debug.ui
+ org.eclipse.debug.ui,
+ org.tigris.subversion.subclipse.core,
+ org.tigris.subversion.subclipse.ui
 Eclipse-LazyStart: true
 Bundle-Vendor: rfuhrer@watson.ibm.com
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
