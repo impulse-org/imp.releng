@@ -60,6 +60,12 @@ public class DetailsDialog extends Dialog {
     }
 
     @Override
+    protected void configureShell(Shell newShell) {
+        super.configureShell(newShell);
+        newShell.setText("Change details for " + fPi.fPluginID);
+    }
+
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite area= (Composite) super.createDialogArea(parent);
 
@@ -104,7 +110,7 @@ public class DetailsDialog extends Dialog {
                 
                 ti.setText(PATH_COL, "");
                 ti.setText(FILE_COL, "");
-                ti.setText(CHANGE_COL, "new plugin(?)");
+                ti.setText(CHANGE_COL, "new plugin (or no history provider available -- SVN)");
                 ti.setData(change);
             }
         }
