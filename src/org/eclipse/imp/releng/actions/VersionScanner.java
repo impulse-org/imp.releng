@@ -38,6 +38,8 @@ import org.eclipse.team.core.history.IFileRevision;
 import org.eclipse.team.internal.ccvs.core.CVSException;
 import org.eclipse.team.internal.ccvs.core.CVSProviderPlugin;
 import org.eclipse.team.internal.ccvs.core.CVSWorkspaceSubscriber;
+import org.eclipse.team.internal.ccvs.core.filehistory.CVSFileHistoryProvider;
+import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 
 public class VersionScanner {
     private final IWorkspaceRoot fWSRoot= ResourcesPlugin.getWorkspace().getRoot();
@@ -86,7 +88,7 @@ public class VersionScanner {
         // Try to determine whether the workspace file is "dirty". Do this by comparing
         // the timestamp of the workspace file with that of the associated repository
         // revision.
-        if (isDirty(file)) {
+        if (isDirty(file, histProvider)) {
             ReleaseEngineeringPlugin.getMsgStream().println("File " + file.getFullPath() + " is out of sync w/ CVS HEAD!");
             return Collections.singleton(file);
         }
@@ -101,12 +103,19 @@ public class VersionScanner {
         // TODO Attempt to determine whether the workspace file revision is the same as HEAD, and bark if not.
     }
 
-    protected boolean isDirty(IFile file) {
-        // Following is adapted from CVSLightweightDecorator
-        try {
-            return getCVSSubscriber().isDirty(file, null);
-        } catch (CVSException e) {
-            return false;
+    protected boolean isDirty(IFile file, IFileHistoryProvider histProvider) {
+        if (histProvider instanceof CVSFileHistoryProvider) {
+            // Following is adapted from CVSLightweightDecorator
+            try {
+                return getCVSSubscriber().isDirty(file, null);
+            } catch (CVSException e) {
+                return false;
+            }
+        } else {
+//          ISVNLocalResource res= null; // How to get one of these for the given IFile?
+//          SVNLightweightDecorator dec= new SVNLightweightDecorator(); // How to get at one of these?
+//          boolean dirty= dec.isDirty(res);
+            return false; // don't know
         }
     }
 
