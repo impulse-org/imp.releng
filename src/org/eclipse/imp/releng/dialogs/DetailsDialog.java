@@ -27,6 +27,7 @@ import org.eclipse.imp.releng.ReleaseEngineeringPlugin;
 import org.eclipse.imp.releng.WorkbenchReleaseTool;
 import org.eclipse.imp.releng.metadata.PluginInfo;
 import org.eclipse.imp.releng.metadata.PluginInfo.ChangeReason;
+import org.eclipse.imp.releng.metadata.PluginInfo.NewPluginChange;
 import org.eclipse.imp.releng.metadata.PluginInfo.ResourceChange;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.TableViewer;
@@ -98,6 +99,13 @@ public class DetailsDialog extends Dialog {
                 ti.setText(CHANGE_COL, rc.getType());
                 // ti.setText(DELTA_COL, "deltas...");
                 ti.setData(rc);
+            } else if (change instanceof NewPluginChange) {
+                TableItem ti= new TableItem(table, SWT.NONE);
+                
+                ti.setText(PATH_COL, "");
+                ti.setText(FILE_COL, "");
+                ti.setText(CHANGE_COL, "new plugin(?)");
+                ti.setData(change);
             }
         }
         // For some reason, addMouseListener() seems to produce no callbacks for
