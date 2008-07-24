@@ -139,7 +139,7 @@ public abstract class ReleaseTool {
             Map<String/*repoTypeID*/,Set<String/*repoRef*/>> repoRefMap= new HashMap<String,Set<String>>();
 
             for(PluginInfo pi: fi.fPluginInfos) {
-                IProject pluginProject= fWSRoot.getProject(pi.fPluginID);
+                IProject pluginProject= fWSRoot.getProject(pi.fProjectName);
 
                 if (pluginProject == null || !pluginProject.exists()) {
                     ReleaseEngineeringPlugin.getMsgStream().println("Unable to open project for plugin ID " + pi.fPluginID + "; ignoring.");
@@ -287,7 +287,7 @@ public abstract class ReleaseTool {
 
     private void setVCTags() {
         for(PluginInfo pi: fPluginInfos) {
-            IProject project= fWSRoot.getProject(pi.fPluginID);
+            IProject project= fWSRoot.getProject(pi.fProjectName);
             if (!RepositoryProvider.isShared(project)) {
                 // Ask the user whether s/he wants to share the project to a repository...
                 if (confirmShareProject(project)) {
@@ -412,7 +412,7 @@ public abstract class ReleaseTool {
     private void collectExclusions() {
         fExclusions.add("com.ibm.wala.shrike");
         fExclusions.add("polyglot");
-        fExclusions.add("lpg.runtime");
+//      fExclusions.add("lpg.runtime");
     }
 
     /**
@@ -576,7 +576,7 @@ public abstract class ReleaseTool {
      */
     private void readOldPluginVersionMaps() {
         for(PluginInfo pi: fPluginInfos) {
-            IProject project= fWSRoot.getProject(pi.fPluginID);
+            IProject project= fWSRoot.getProject(pi.fProjectName);
             FileVersionMap fvMap= new FileVersionMap(project, pi.fPluginID, pi.fPluginVersion);
 
             if (fvMap.isEmpty()) {
@@ -602,8 +602,7 @@ public abstract class ReleaseTool {
         Set<IFile> dirtyFiles= new TreeSet<IFile>(fFileComparator);
 
         for(PluginInfo pi : fPluginInfos) {
-            String pluginID= pi.fPluginID;
-            IProject pluginProject= fWSRoot.getProject(pluginID);
+            IProject pluginProject= fWSRoot.getProject(pi.fProjectName);
 
             if (pluginProject == null)
                 continue;
@@ -738,8 +737,7 @@ public abstract class ReleaseTool {
             if (!pi.getChangeState().isChange())
                 continue;
 
-            String pluginID= pi.fPluginID;
-            IProject pluginProject= fWSRoot.getProject(pluginID);
+            IProject pluginProject= fWSRoot.getProject(pi.fProjectName);
 
             if (pluginProject == null)
                 continue;
@@ -1218,7 +1216,7 @@ public abstract class ReleaseTool {
             Set<PluginInfo> plugins= featureInfo.fPluginInfos;
 
             for(PluginInfo pluginInfo: plugins) {
-                IProject pluginProject= fWSRoot.getProject(pluginInfo.fPluginID);
+                IProject pluginProject= fWSRoot.getProject(pluginInfo.fProjectName);
 
                 if (pluginProject == null) {
                     postError("Unable to find project for plugin " + pluginInfo.fPluginID, null);
