@@ -156,7 +156,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         MessageConsoleStream mcs= ReleaseEngineeringPlugin.getMsgStream();
         List<ChangeReason> changes= pi.getAllChanges();
         IWorkspaceRoot wsRoot= ResourcesPlugin.getWorkspace().getRoot();
-        IProject proj= wsRoot.getProject(pi.fPluginID);
+        IProject proj= wsRoot.getProject(pi.fProjectName);
         IFileHistoryProvider histProvider= RepositoryProvider.getProvider(proj).getFileHistoryProvider();
 
         for(ChangeReason change: changes) {

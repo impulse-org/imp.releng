@@ -177,7 +177,7 @@ public class CopyrightAdder {
 
         for(FeatureInfo featureInfo: sfid.getSelectedFeatures()) {
             for(PluginInfo plugin: featureInfo.fPluginInfos) {
-                projects.add(wsRoot.getProject(plugin.fPluginID));
+                projects.add(wsRoot.getProject(plugin.fProjectName));
             }
         }
 
