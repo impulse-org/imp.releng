@@ -49,6 +49,8 @@ public class RetrieveUpdateSiteDialog extends Dialog {
 	private String fRepoServer;
 	private String fRepoPath;
 	private String fUpdateSiteProjectName;
+
+	// TODO Anon access should be per repository, not per update site project
 	private boolean fAnonAccess;
 
 	private boolean fRetrieveFeatures;
