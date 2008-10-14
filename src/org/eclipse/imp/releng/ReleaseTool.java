@@ -206,7 +206,7 @@ public abstract class ReleaseTool {
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"); nl(sb);
         sb.append("<psf version=\"2.0\">"); nl(sb);
         for(String repoTypeID: repoRefMap.keySet()) {
-            Set<String> repoRefs= repoRefMap.get(repoTypeID);
+            TreeSet<String> repoRefs= new TreeSet<String>(repoRefMap.get(repoTypeID)); // output the projects in string order
 
             sb.append("    <provider id=\"" + repoTypeID + "\">"); nl(sb);
             for(String repoRef: repoRefs) {
