@@ -12,15 +12,19 @@
 
 package org.eclipse.imp.releng;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -31,7 +35,6 @@ import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.imp.releng.dialogs.SelectFeatureInfosDialog;
 import org.eclipse.imp.releng.metadata.FeatureInfo;
@@ -41,6 +44,10 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.TextFileChange;
+import org.eclipse.text.edits.MultiTextEdit;
+import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
 
 public class CopyrightAdder {
@@ -49,19 +56,35 @@ public class CopyrightAdder {
     }
 
     private class JavaEPLCopyrightAdder implements ICopyrightAdder {
-        private static final String COPYRIGHT_NOTICE= 
-                "/*******************************************************************************\n" +
-                "* Copyright (c) 2008 IBM Corporation.\n" +
-                "* All rights reserved. This program and the accompanying materials\n" +
-                "* are made available under the terms of the Eclipse Public License v1.0\n" +
-                "* which accompanies this distribution, and is available at\n" +
-                "* http://www.eclipse.org/legal/epl-v10.html\n" +
-                "*\n" +
-                "* Contributors:\n" +
-                "*    Robert Fuhrer (rfuhrer@watson.ibm.com) - initial API and implementation\n" +
-                "\n" +
-                "*******************************************************************************/\n\n";
+    	private Pattern COPYRIGHT_PATTERN= Pattern.compile(
+    			"/\\*.*\n" +
+                "\\s*\\* Copyright \\(c\\) [0-9]+ IBM Corporation.\n" +
+                "\\s*\\* All rights reserved. This program and the accompanying materials\n" +
+                "\\s*\\* are made available under the terms of the Eclipse Public License v1.0\n" +
+                "\\s*\\* which accompanies this distribution, and is available at\n" +
+                "\\s*\\* http://www.eclipse.org/legal/epl-v10.html\n" +
+                "\\s*\\*\n" +
+                "\\s*\\* Contributors:\n" +
+                "(\\s*\\*.*\n)+" + // 1 or more contributor lines
+                "\\s*\\*?\n" +
+                ".*\\*/\n");
         
+        private static final String COPYRIGHT_NOTICE= 
+            "/*******************************************************************************\n" +
+            "* Copyright (c) 2008 IBM Corporation.\n" +
+            "* All rights reserved. This program and the accompanying materials\n" +
+            "* are made available under the terms of the Eclipse Public License v1.0\n" +
+            "* which accompanies this distribution, and is available at\n" +
+            "* http://www.eclipse.org/legal/epl-v10.html\n" +
+            "*\n" +
+            "* Contributors:\n" +
+            "*    Robert Fuhrer (rfuhrer@watson.ibm.com) - initial API and implementation\n" +
+            "*\n" +
+            "*******************************************************************************/\n\n";
+
+        /**
+         * This is the old, pre-eclipse.org copyright notice that needs to be replaced.
+         */
         private static final String OLD_COPYRIGHT_NOTICE= "/*\r\n" +
             " * (C) Copyright IBM Corporation 2007\r\n" +
             " * \r\n" +
@@ -80,17 +103,35 @@ public class CopyrightAdder {
                 String suffix = src.substring(oldStart + OLD_COPYRIGHT_LENGTH);
                 return prefix + suffix;
         }
-        
-        
+
         public String addCopyright(String src) {
-            if (src.contains(COPYRIGHT_NOTICE))
-                return src;
-            src = removeOldCopyright(src);
-                return COPYRIGHT_NOTICE + src;
+        	Matcher m= COPYRIGHT_PATTERN.matcher(src);
+            if (m.find())
+                return src; // already has the new copyright notice
+            src= removeOldCopyright(src);
+            return COPYRIGHT_NOTICE + src;
         }
     }
 
     private class LPGEPLCopyrightAdder implements ICopyrightAdder {
+        private final Pattern COPYRIGHT_PATTERN = Pattern.compile(
+            "%Notice\n" +
+            "/.\n" +
+            "////////////////////////////////////////////////////////////////////////////////\n" +
+            "// Copyright (c) [0-9]+ IBM Corporation.\n" +
+            "// All rights reserved. This program and the accompanying materials\n" +
+            "// are made available under the terms of the Eclipse Public License v1.0\n" +
+            "// which accompanies this distribution, and is available at\n" +
+            "// http://www.eclipse.org/legal/epl-v10.html\n" +
+            "//\n" +
+            "//Contributors:\n" +
+            "(//.*\n)+" + // 1 or more contributor lines
+            "\n" +
+            "////////////////////////////////////////////////////////////////////////////////\n" +
+            "./\n" +
+            "%End\n" +
+            "\n");
+
         private static final String COPYRIGHT_NOTICE = 
         "%Notice\n" +
         "/.\n" +
@@ -109,7 +150,6 @@ public class CopyrightAdder {
         "%End\n" +
         "\n";
 
-        
         private static final String OLD_COPYRIGHT_NOTICE= "%Notice\r\n" +
             "/.\r\n" +
             "// (C) Copyright IBM Corporation 2007\r\n" +
@@ -118,9 +158,11 @@ public class CopyrightAdder {
             "./\r\n" +
             "%End\r\n" +
             "\r\n";
-        
+
         private final int OLD_COPYRIGHT_LENGTH = OLD_COPYRIGHT_NOTICE.length();
-        
+
+        private final Pattern RULES_PATTERN= Pattern.compile("^\\s*%[Rr][Uu][Ll][Ee][Ss]");
+
         public String removeOldCopyright(String src) {
                 int oldStart = src.indexOf(OLD_COPYRIGHT_NOTICE);
                 if (oldStart < 0)
@@ -131,14 +173,23 @@ public class CopyrightAdder {
                 String suffix = src.substring(oldStart + OLD_COPYRIGHT_LENGTH);
                 return prefix + suffix;
         }
-        
+
         public String addCopyright(String src) {
-            if (src.contains(COPYRIGHT_NOTICE))
+        	Matcher cm= COPYRIGHT_PATTERN.matcher(src);
+            if (cm.find())
                 return src;
             src = removeOldCopyright(src);
-            int rulesLoc= src.indexOf("%Rules"); // Look for the new keyword form ("%Rules") first; "XXX$Rules" is a legal right-hand side symbol reference
-            if (rulesLoc < 0)
+            Matcher rm= RULES_PATTERN.matcher(src);
+            int rulesLoc= -1;
+            if (rm.find()) {
+            	rulesLoc= rm.start(); // Look for the new keyword form ("%Rules") first; "XXX$Rules" is a legal right-hand side symbol reference
+            }
+            if (rulesLoc < 0) {
                 rulesLoc= src.indexOf("$Rules");
+            }
+            if (rulesLoc < 0) {
+            	rulesLoc= 0;
+            }
             return src.substring(0, rulesLoc) + COPYRIGHT_NOTICE + src.substring(rulesLoc);
         }
     }
@@ -156,12 +207,34 @@ public class CopyrightAdder {
     }
 
     private final Set<IFolder> fSrcRoots= new HashSet<IFolder>();
+    private final List<IFile> fChangedFiles= new ArrayList<IFile>();
+    private final List<Change> fChanges= new ArrayList<Change>();
 
-    public void addCopyrights() {
+    private int fModCount= 0;
+
+	public void addCopyrightTo(IResource resource) {
+		fChangedFiles.clear();
+		fChanges.clear();
+
+        if (resource instanceof IFile) {
+        	processFile((IFile) resource);
+        } else if (resource instanceof IFolder) {
+        	fSrcRoots.clear();
+        	fSrcRoots.add((IFolder) resource);
+        	traverseSrcRootsAddCopyrights();
+        }
+
+        ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
+        ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
+	}
+
+	public void addCopyrights() {
 //        final IPreferenceStore prefStore= ReleaseEngineeringPlugin.getInstance().getPreferenceStore();
 
         fReleaseTool.collectMetaData(true);
 
+		fChangedFiles.clear();
+		fChanges.clear();
         fSrcRoots.clear();
 
         List<FeatureInfo> featureInfos= fReleaseTool.getFeatureInfos();
@@ -183,7 +256,53 @@ public class CopyrightAdder {
 
         collectProjectSourceRoots(projects);
 
-        for(IFolder srcRoot: fSrcRoots) {
+    	fModCount= 0;
+        traverseSrcRootsAddCopyrights();
+        ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
+        ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
+    }
+
+	private void processFile(IFile file) {
+		String fileExtension= file.getFileExtension();
+
+		if (fExtensionMap.containsKey(fileExtension)) {
+		    ICopyrightAdder copyrightAdder= fExtensionMap.get(fileExtension);
+
+		    addCopyright(copyrightAdder, file);
+		}
+	}
+
+    private void addCopyright(ICopyrightAdder copyrightAdder, IFile file) {
+        try {
+//          ReleaseEngineeringPlugin.getMsgStream().println("    Processing file " + file.getLocation().toPortableString());
+            InputStream is= file.getContents();
+            String origCont= getFileContents(new InputStreamReader(is));
+
+            final String newCont= copyrightAdder.addCopyright(origCont);
+
+            if (newCont.equals(origCont)) {
+            	return;
+            }
+
+            ReleaseEngineeringPlugin.getMsgStream().println("        File " + file.getName() + " needs a copyright notice.");
+            fModCount++;
+
+            TextFileChange tfc= new TextFileChange("Add copyright to " + file.getName(), file);
+	        long curFileLength= new File(file.getLocation().toOSString()).length();
+
+	        tfc.setEdit(new MultiTextEdit());
+	        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, newCont));
+	
+	        fChangedFiles.add(file);
+	        fChanges.add(tfc);
+        } catch(CoreException e) {
+            logError(e);
+            e.printStackTrace();
+        }
+    }
+
+    private void traverseSrcRootsAddCopyrights() {
+		for(IFolder srcRoot: fSrcRoots) {
             try {
                 srcRoot.accept(new IResourceVisitor() {
                     public boolean visit(IResource resource) throws CoreException {
@@ -191,41 +310,11 @@ public class CopyrightAdder {
                             return false;
 
                         if (resource instanceof IFile) {
-                            IFile file= (IFile) resource;
-                            String fileExtension= file.getFileExtension();
-
-                            if (fExtensionMap.containsKey(fileExtension)) {
-                                ICopyrightAdder copyrightAdder= fExtensionMap.get(fileExtension);
-
-                                addCopyright(copyrightAdder, file);
-                            }
+                            processFile((IFile) resource);
                         } else if (resource instanceof IFolder) {
                             ReleaseEngineeringPlugin.getMsgStream().println("  Scanning folder " + resource.getLocation().toPortableString());
                         }
                         return true;
-                    }
-
-                    private void addCopyright(ICopyrightAdder copyrightAdder, IFile file) {
-                        try {
-                            ReleaseEngineeringPlugin.getMsgStream().println("    Processing file " + file.getLocation().toPortableString());
-                            InputStream is= file.getContents();
-                            String origCont= getFileContents(new InputStreamReader(is));
-
-                            final String newCont= copyrightAdder.addCopyright(origCont);
-
-                            file.setContents(new InputStream() {
-                                private int idx= 0;
-                                @Override
-                                public int read() throws IOException {
-                                    if (idx < newCont.length())
-                                        return newCont.charAt(idx++);
-                                    return -1;
-                                }
-                            }, true, true, new NullProgressMonitor());
-                        } catch(CoreException e) {
-                            logError(e);
-                            e.printStackTrace();
-                        }
                     }
                 });
             } catch (CoreException e) {
@@ -233,7 +322,7 @@ public class CopyrightAdder {
                 e.printStackTrace();
             }
         }
-    }
+	}
 
     /**
      * @param projects
