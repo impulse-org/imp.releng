@@ -831,7 +831,7 @@ public abstract class ReleaseTool {
         }
     }
 
-    private void doPerformChange(List<Change> changes, String editName, List<IFile> changedFiles) {
+    protected static void doPerformChange(List<Change> changes, String editName, List<IFile> changedFiles) {
         Change change= new CompositeChange(editName, changes.toArray(new Change[changes.size()]));
         change.initializeValidationData(new NullProgressMonitor());
         PerformChangeOperation changeOp= new PerformChangeOperation(change);
