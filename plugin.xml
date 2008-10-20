@@ -60,7 +60,13 @@
          <action
                class="org.eclipse.imp.releng.actions.AddCopyrightAction"
                id="org.eclipse.imp.releaseEngineering.addCopyrightAction"
-               label="Add Copyright Notice to Source Files"
+               label="Add Copyright Notice to Feature Source Files"
+               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.AddThisCopyrightAction"
+               id="org.eclipse.imp.releaseEngineering.addThisCopyrightAction"
+               label="Add Copyright Notice to this Source File"
                menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
                style="push"/>
          <action
