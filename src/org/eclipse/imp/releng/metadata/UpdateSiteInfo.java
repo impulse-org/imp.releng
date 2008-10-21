@@ -184,7 +184,7 @@ public class UpdateSiteInfo {
         return true;
     }
 
-    public void rewriteManifest(List<Change> changes, List<IFile> changedFiles) {
+    public void rewriteManifest(List<TextFileChange> changes, List<IFile> changedFiles) {
         StringBuilder sb= new StringBuilder();
 
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"); nl(sb);

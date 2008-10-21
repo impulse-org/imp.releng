@@ -36,6 +36,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.imp.releng.dialogs.ConfirmChangedFileViewer;
 import org.eclipse.imp.releng.dialogs.SelectFeatureInfosDialog;
 import org.eclipse.imp.releng.metadata.FeatureInfo;
 import org.eclipse.imp.releng.metadata.PluginInfo;
@@ -44,8 +45,20 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ltk.core.refactoring.Change;
+import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Point;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
@@ -68,8 +81,8 @@ public class CopyrightAdder {
                 "(\\s*\\*.*\n)+" + // 1 or more contributor lines
                 "\\s*\\*?\n" +
                 ".*\\*/\n");
-        
-        private static final String COPYRIGHT_NOTICE= 
+
+        private static final String COPYRIGHT_NOTICE=
             "/*******************************************************************************\n" +
             "* Copyright (c) 2008 IBM Corporation.\n" +
             "* All rights reserved. This program and the accompanying materials\n" +
@@ -90,9 +103,9 @@ public class CopyrightAdder {
             " * \r\n" +
             " * This file is part of the Eclipse IMP.\r\n" +
             " */\r\n";
-        
+
         private final int OLD_COPYRIGHT_LENGTH = OLD_COPYRIGHT_NOTICE.length();
-        
+
         public String removeOldCopyright(String src) {
                 int oldStart = src.indexOf(OLD_COPYRIGHT_NOTICE);
                 if (oldStart < 0)
@@ -132,7 +145,7 @@ public class CopyrightAdder {
             "%End\n" +
             "\n");
 
-        private static final String COPYRIGHT_NOTICE = 
+        private static final String COPYRIGHT_NOTICE =
         "%Notice\n" +
         "/.\n" +
         "////////////////////////////////////////////////////////////////////////////////\n" +
@@ -208,11 +221,17 @@ public class CopyrightAdder {
 
     private final Set<IFolder> fSrcRoots= new HashSet<IFolder>();
     private final List<IFile> fChangedFiles= new ArrayList<IFile>();
-    private final List<Change> fChanges= new ArrayList<Change>();
+    private final List<TextFileChange> fChanges= new ArrayList<TextFileChange>();
 
     private int fModCount= 0;
 
 	public void addCopyrightTo(IResource resource) {
+		computeChangeForCopyrights(resource);
+        ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
+        ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
+	}
+
+	public List<TextFileChange> computeChangeForCopyrights(IResource resource) {
 		fChangedFiles.clear();
 		fChanges.clear();
 
@@ -223,9 +242,7 @@ public class CopyrightAdder {
         	fSrcRoots.add((IFolder) resource);
         	traverseSrcRootsAddCopyrights();
         }
-
-        ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
-        ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
+		return fChanges;
 	}
 
 	public void addCopyrights() {
@@ -239,7 +256,8 @@ public class CopyrightAdder {
 
         List<FeatureInfo> featureInfos= fReleaseTool.getFeatureInfos();
 
-        SelectFeatureInfosDialog sfid= new SelectFeatureInfosDialog(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), featureInfos);
+        final Shell shell= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+		SelectFeatureInfosDialog sfid= new SelectFeatureInfosDialog(shell, featureInfos);
 
         if (sfid.open() != Dialog.OK) {
             return;
@@ -258,8 +276,74 @@ public class CopyrightAdder {
 
     	fModCount= 0;
         traverseSrcRootsAddCopyrights();
-        ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
-        ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
+
+        if (fChanges.size() == 0) {
+        	MessageDialog.openInformation(shell, "No changes needed", "No source files lack a copyright notice.");
+        	return;
+        }
+
+        final CompositeChange topChange= new CompositeChange("Copyright additions");
+
+        topChange.addAll(fChanges.toArray(new Change[fChanges.size()]));
+
+        Dialog d= new Dialog(shell) {
+        	{
+        		setShellStyle(getShellStyle() | SWT.RESIZE);
+        	}
+        	@Override
+        	protected Point getInitialSize() {
+        		return new Point(750, 350);
+        	}
+        	@Override
+        	protected void configureShell(Shell newShell) {
+        		super.configureShell(newShell);
+        		setShellStyle(getShellStyle() | SWT.RESIZE);
+        	}
+        	@Override
+        	protected Control createDialogArea(Composite parent) {
+        		Composite dialogArea= (Composite) super.createDialogArea(parent); // new Composite(parent, SWT.NONE);
+        		Composite composite= new Composite(dialogArea, SWT.NONE);
+                GridData gd= new GridData(GridData.FILL, GridData.FILL, true, true);
+                gd.heightHint= 270;
+                gd.widthHint= 720;
+                composite.setLayoutData(gd);
+                GridLayout layout= new GridLayout();
+                composite.setLayout(layout);
+                final org.eclipse.swt.widgets.List list= new org.eclipse.swt.widgets.List(composite, SWT.BORDER | SWT.SINGLE | SWT.V_SCROLL);
+
+                for(int i=0; i < fChanges.size(); i++) {
+                	list.add(fChanges.get(i).getName());
+                }
+                gd= new GridData(GridData.FILL_BOTH);
+                gd.heightHint= 120;
+                gd.widthHint= 720;
+                list.setLayoutData(gd);
+
+                final ConfirmChangedFileViewer v= new ConfirmChangedFileViewer();
+                v.createControl(composite);
+                gd= new GridData(GridData.FILL_BOTH);
+                gd.heightHint= 150;
+                gd.widthHint= 720;
+                v.getControl().setLayoutData(gd);
+
+                list.select(0);
+                v.setInput(ConfirmChangedFileViewer.createInput(fChanges.get(0)));
+                list.addSelectionListener(new SelectionListener() {
+					public void widgetDefaultSelected(SelectionEvent e) { }
+					public void widgetSelected(SelectionEvent e) {
+						int idx= list.getSelectionIndex();
+
+						v.setInput(ConfirmChangedFileViewer.createInput(fChanges.get(idx)));
+					}
+                });
+                return dialogArea;
+        	}
+        };
+
+        if (d.open() == Dialog.OK) {
+            ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
+            ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
+        }
     }
 
 	private void processFile(IFile file) {
@@ -292,7 +376,7 @@ public class CopyrightAdder {
 
 	        tfc.setEdit(new MultiTextEdit());
 	        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, newCont));
-	
+
 	        fChangedFiles.add(file);
 	        fChanges.add(tfc);
         } catch(CoreException e) {

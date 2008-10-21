@@ -275,7 +275,7 @@ public abstract class ReleaseTool {
 
     private void performAllChanges() {
         List<IFile> changedFiles= new ArrayList<IFile>();
-        List<Change> changes= new ArrayList<Change>();
+        List<TextFileChange> changes= new ArrayList<TextFileChange>();
 
         writeNewPluginVersionMaps(changedFiles);
         rewriteFeatureManifests(changes, changedFiles);
@@ -753,7 +753,7 @@ public abstract class ReleaseTool {
 
     protected void rewriteFeatureManifest(FeatureInfo featureInfo) {
         List<IFile> changedFiles= new ArrayList<IFile>();
-        List<Change> changes= new ArrayList<Change>();
+        List<TextFileChange> changes= new ArrayList<TextFileChange>();
 
         try {
             rewriteFeatureManifest(featureInfo, changes, changedFiles);
@@ -763,7 +763,7 @@ public abstract class ReleaseTool {
         }
     }
 
-    private void rewriteFeatureManifest(FeatureInfo fi, List<Change> changes, List<IFile> changedFiles) throws IOException {
+    private void rewriteFeatureManifest(FeatureInfo fi, List<TextFileChange> changes, List<IFile> changedFiles) throws IOException {
         ReleaseEngineeringPlugin.getMsgStream().println("Rewriting feature manifest " + fi.fManifestFile.getLocation().toPortableString());
 
         try {
@@ -793,7 +793,7 @@ public abstract class ReleaseTool {
 		}
     }
 
-    protected void rewriteFeatureManifests(List<Change> changes, List<IFile> changedFiles) {
+    protected void rewriteFeatureManifests(List<TextFileChange> changes, List<IFile> changedFiles) {
         for(FeatureInfo fi: fFeatureInfos) {
             try {
                 rewriteFeatureManifest(fi, changes, changedFiles);
@@ -803,7 +803,7 @@ public abstract class ReleaseTool {
         }
     }
 
-    private void rewritePluginManifests(List<Change> changes, List<IFile> changedFiles) {
+    private void rewritePluginManifests(List<TextFileChange> changes, List<IFile> changedFiles) {
         for(PluginInfo pi: fPluginInfos) {
             IFile manifest= pi.fManifest;
 
@@ -831,7 +831,7 @@ public abstract class ReleaseTool {
         }
     }
 
-    protected static void doPerformChange(List<Change> changes, String editName, List<IFile> changedFiles) {
+    protected static void doPerformChange(List<TextFileChange> changes, String editName, List<IFile> changedFiles) {
         Change change= new CompositeChange(editName, changes.toArray(new Change[changes.size()]));
         change.initializeValidationData(new NullProgressMonitor());
         PerformChangeOperation changeOp= new PerformChangeOperation(change);
@@ -916,7 +916,7 @@ public abstract class ReleaseTool {
 
     protected void rewriteUpdateSiteManifests(List<UpdateSiteInfo> sites) {
         List<IFile> changedFiles= new ArrayList<IFile>();
-        List<Change> changes= new ArrayList<Change>();
+        List<TextFileChange> changes= new ArrayList<TextFileChange>();
 
         for(UpdateSiteInfo site: sites) {
             site.rewriteManifest(changes, changedFiles);
