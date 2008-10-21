@@ -39,7 +39,6 @@ import org.eclipse.team.internal.ccvs.core.CVSException;
 import org.eclipse.team.internal.ccvs.core.CVSProviderPlugin;
 import org.eclipse.team.internal.ccvs.core.CVSWorkspaceSubscriber;
 import org.eclipse.team.internal.ccvs.core.filehistory.CVSFileHistoryProvider;
-import org.tigris.subversion.subclipse.core.ISVNLocalResource;
 
 public class VersionScanner {
     private final IWorkspaceRoot fWSRoot= ResourcesPlugin.getWorkspace().getRoot();
