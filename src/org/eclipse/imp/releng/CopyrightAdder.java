@@ -55,16 +55,110 @@ import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Tree;
+import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
 
 public class CopyrightAdder {
-    private interface ICopyrightAdder {
+    private static final class ConfirmChangedFilesDialog extends Dialog {
+    	private final CompositeChange fTopChange;
+
+		private ConfirmChangedFilesDialog(Shell parentShell, CompositeChange topChange) {
+			super(parentShell);
+			fTopChange= topChange;
+			setShellStyle(getShellStyle() | SWT.RESIZE);
+		}
+
+		@Override
+		protected void configureShell(Shell newShell) {
+			super.configureShell(newShell);
+			newShell.setText("Add copyright changes");
+		}
+
+		@Override
+		protected Point getInitialSize() {
+			return new Point(750, 350);
+		}
+
+		@Override
+		protected Control createDialogArea(Composite parent) {
+			Composite dialogArea= (Composite) super.createDialogArea(parent);
+			Composite composite= new Composite(dialogArea, SWT.NONE);
+		    GridData gd= new GridData(GridData.FILL, GridData.FILL, true, true);
+		    gd.heightHint= 270;
+		    gd.widthHint= 720;
+		    composite.setLayoutData(gd);
+		    GridLayout layout= new GridLayout();
+		    composite.setLayout(layout);
+
+		    final Tree chgTreeControl= createChangeTreeViewer(composite);
+
+		    gd= new GridData(GridData.FILL_BOTH);
+		    gd.heightHint= 120;
+		    gd.widthHint= 720;
+		    chgTreeControl.setLayoutData(gd);
+
+		    final ConfirmChangedFileViewer v= new ConfirmChangedFileViewer();
+		    v.createControl(composite);
+		    gd= new GridData(GridData.FILL_BOTH);
+		    gd.heightHint= 150;
+		    gd.widthHint= 720;
+		    v.getControl().setLayoutData(gd);
+
+		    setupSelectionListener(chgTreeControl, v);
+		    return dialogArea;
+		}
+
+		private void setupSelectionListener(final Tree chgTree, final ConfirmChangedFileViewer v) {
+			chgTree.addSelectionListener(new SelectionListener() {
+				public void widgetDefaultSelected(SelectionEvent e) { }
+				public void widgetSelected(SelectionEvent e) {
+					TextFileChange tfc= (TextFileChange) e.item.getData();
+
+					v.setInput(ConfirmChangedFileViewer.createInput(tfc));
+				}
+		    });
+		}
+
+		private Tree createChangeTreeViewer(Composite parent) {
+			Tree tree= new Tree(parent, SWT.SINGLE);
+			populateSubTree(tree, fTopChange);
+			return tree;
+		}
+
+		private void populateSubTree(Tree parent, Change change) {
+			if (change instanceof CompositeChange) {
+				CompositeChange compChange= (CompositeChange) change;
+
+				for(Change child: compChange.getChildren()) {
+					TreeItem newItem= new TreeItem(parent, SWT.NONE);
+					newItem.setText(child.getName());
+					newItem.setData(child);
+					populateSubTree(newItem, child);
+				}
+			}
+		}
+
+		private void populateSubTree(TreeItem parentItem, Change change) {
+			if (change instanceof CompositeChange) {
+				CompositeChange compChange= (CompositeChange) change;
+
+				for(Change child: compChange.getChildren()) {
+					TreeItem newItem= new TreeItem(parentItem, SWT.NONE);
+					newItem.setText(child.getName());
+					newItem.setData(child);
+					populateSubTree(newItem, child);
+				}
+			}
+		}
+	}
+
+	private interface ICopyrightAdder {
         String addCopyright(String src);
     }
 
@@ -221,37 +315,37 @@ public class CopyrightAdder {
 
     private final Set<IFolder> fSrcRoots= new HashSet<IFolder>();
     private final List<IFile> fChangedFiles= new ArrayList<IFile>();
-    private final List<TextFileChange> fChanges= new ArrayList<TextFileChange>();
+    private CompositeChange fTopChange;
 
     private int fModCount= 0;
 
 	public void addCopyrightTo(IResource resource) {
 		computeChangeForCopyrights(resource);
-        ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
+        ReleaseTool.doPerformChange(fTopChange, "Adding copyright notices", fChangedFiles);
         ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
 	}
 
-	public List<TextFileChange> computeChangeForCopyrights(IResource resource) {
+	public CompositeChange computeChangeForCopyrights(IResource resource) {
 		fChangedFiles.clear();
-		fChanges.clear();
+		fTopChange= new CompositeChange("Copyright additions");
 
         if (resource instanceof IFile) {
-        	processFile((IFile) resource);
+        	processFile((IFile) resource, fTopChange);
         } else if (resource instanceof IFolder) {
         	fSrcRoots.clear();
         	fSrcRoots.add((IFolder) resource);
-        	traverseSrcRootsAddCopyrights();
+        	traverseSrcRootsAddCopyrights(fTopChange);
         }
-		return fChanges;
+		return fTopChange;
 	}
 
 	public void addCopyrights() {
-//        final IPreferenceStore prefStore= ReleaseEngineeringPlugin.getInstance().getPreferenceStore();
+//      final IPreferenceStore prefStore= ReleaseEngineeringPlugin.getInstance().getPreferenceStore();
 
         fReleaseTool.collectMetaData(true);
 
 		fChangedFiles.clear();
-		fChanges.clear();
+		fTopChange= new CompositeChange("Copyright additions");
         fSrcRoots.clear();
 
         List<FeatureInfo> featureInfos= fReleaseTool.getFeatureInfos();
@@ -275,88 +369,81 @@ public class CopyrightAdder {
         collectProjectSourceRoots(projects);
 
     	fModCount= 0;
-        traverseSrcRootsAddCopyrights();
+        traverseSrcRootsAddCopyrights(fTopChange);
 
-        if (fChanges.size() == 0) {
+        if (fTopChange.getChildren().length == 0) {
         	MessageDialog.openInformation(shell, "No changes needed", "No source files lack a copyright notice.");
         	return;
         }
 
-        final CompositeChange topChange= new CompositeChange("Copyright additions");
-
-        topChange.addAll(fChanges.toArray(new Change[fChanges.size()]));
-
-        Dialog d= new Dialog(shell) {
-        	{
-        		setShellStyle(getShellStyle() | SWT.RESIZE);
-        	}
-        	@Override
-        	protected Point getInitialSize() {
-        		return new Point(750, 350);
-        	}
-        	@Override
-        	protected void configureShell(Shell newShell) {
-        		super.configureShell(newShell);
-        		setShellStyle(getShellStyle() | SWT.RESIZE);
-        	}
-        	@Override
-        	protected Control createDialogArea(Composite parent) {
-        		Composite dialogArea= (Composite) super.createDialogArea(parent); // new Composite(parent, SWT.NONE);
-        		Composite composite= new Composite(dialogArea, SWT.NONE);
-                GridData gd= new GridData(GridData.FILL, GridData.FILL, true, true);
-                gd.heightHint= 270;
-                gd.widthHint= 720;
-                composite.setLayoutData(gd);
-                GridLayout layout= new GridLayout();
-                composite.setLayout(layout);
-                final org.eclipse.swt.widgets.List list= new org.eclipse.swt.widgets.List(composite, SWT.BORDER | SWT.SINGLE | SWT.V_SCROLL);
-
-                for(int i=0; i < fChanges.size(); i++) {
-                	list.add(fChanges.get(i).getName());
-                }
-                gd= new GridData(GridData.FILL_BOTH);
-                gd.heightHint= 120;
-                gd.widthHint= 720;
-                list.setLayoutData(gd);
-
-                final ConfirmChangedFileViewer v= new ConfirmChangedFileViewer();
-                v.createControl(composite);
-                gd= new GridData(GridData.FILL_BOTH);
-                gd.heightHint= 150;
-                gd.widthHint= 720;
-                v.getControl().setLayoutData(gd);
-
-                list.select(0);
-                v.setInput(ConfirmChangedFileViewer.createInput(fChanges.get(0)));
-                list.addSelectionListener(new SelectionListener() {
-					public void widgetDefaultSelected(SelectionEvent e) { }
-					public void widgetSelected(SelectionEvent e) {
-						int idx= list.getSelectionIndex();
-
-						v.setInput(ConfirmChangedFileViewer.createInput(fChanges.get(idx)));
-					}
-                });
-                return dialogArea;
-        	}
-        };
+        Dialog d= new ConfirmChangedFilesDialog(shell, fTopChange);
 
         if (d.open() == Dialog.OK) {
-            ReleaseTool.doPerformChange(fChanges, "Adding copyright notices", fChangedFiles);
+            ReleaseTool.doPerformChange(fTopChange, "Adding copyright notices", fChangedFiles);
             ReleaseEngineeringPlugin.getMsgStream().println("Modified " + fModCount + " files.");
         }
     }
 
-	private void processFile(IFile file) {
+    private void traverseSrcRootsAddCopyrights(final CompositeChange topChange) {
+    	final Map<IResource,CompositeChange> resource2Change= new HashMap<IResource, CompositeChange>();
+		for(IFolder srcRoot: fSrcRoots) {
+			IProject project= srcRoot.getProject();
+
+			if (!resource2Change.containsKey(project)) {
+				CompositeChange projChange= new CompositeChange("Project " + project.getName());
+				topChange.add(projChange);
+				resource2Change.put(project, projChange);
+			}
+	    	CompositeChange folderChange= new CompositeChange(/*"Adding notices to folder " + */srcRoot.getName());
+			resource2Change.put(srcRoot, folderChange);
+            try {
+                srcRoot.accept(new IResourceVisitor() {
+                    public boolean visit(IResource resource) throws CoreException {
+                        if (resource.isDerived())
+                            return false;
+
+                        if (resource instanceof IFile) {
+                            processFile((IFile) resource, resource2Change.get(resource.getParent()));
+                        } else if (resource instanceof IFolder) {
+                            ReleaseEngineeringPlugin.getMsgStream().println("  Scanning folder " + resource.getLocation().toPortableString());
+                        	CompositeChange newComp= new CompositeChange(/*"Adding notices to folder " + */resource.getName());
+                        	resource2Change.put(resource, newComp);
+                        	resource2Change.get(resource.getParent()).add(newComp);
+                        }
+                        return true;
+                    }
+                });
+            } catch (CoreException e) {
+                logError(e);
+                e.printStackTrace();
+            }
+        }
+		pruneEmptyChanges(fTopChange);
+	}
+
+	private void pruneEmptyChanges(Change change) {
+		if (change instanceof CompositeChange) {
+			CompositeChange compositeChange= (CompositeChange) change;
+			for(Change child: compositeChange.getChildren()) {
+				pruneEmptyChanges(child);
+			}
+			if (compositeChange.getChildren().length == 0) {
+				((CompositeChange) compositeChange.getParent()).remove(compositeChange);
+			}
+		}
+	}
+
+	private void processFile(IFile file, CompositeChange parentChange) {
 		String fileExtension= file.getFileExtension();
 
 		if (fExtensionMap.containsKey(fileExtension)) {
 		    ICopyrightAdder copyrightAdder= fExtensionMap.get(fileExtension);
 
-		    addCopyright(copyrightAdder, file);
+		    addCopyright(copyrightAdder, file, parentChange);
 		}
 	}
 
-    private void addCopyright(ICopyrightAdder copyrightAdder, IFile file) {
+    private void addCopyright(ICopyrightAdder copyrightAdder, IFile file, CompositeChange parentChange) {
         try {
 //          ReleaseEngineeringPlugin.getMsgStream().println("    Processing file " + file.getLocation().toPortableString());
             InputStream is= file.getContents();
@@ -378,35 +465,12 @@ public class CopyrightAdder {
 	        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, newCont));
 
 	        fChangedFiles.add(file);
-	        fChanges.add(tfc);
+	        parentChange.add(tfc);
         } catch(CoreException e) {
             logError(e);
             e.printStackTrace();
         }
     }
-
-    private void traverseSrcRootsAddCopyrights() {
-		for(IFolder srcRoot: fSrcRoots) {
-            try {
-                srcRoot.accept(new IResourceVisitor() {
-                    public boolean visit(IResource resource) throws CoreException {
-                        if (resource.isDerived())
-                            return false;
-
-                        if (resource instanceof IFile) {
-                            processFile((IFile) resource);
-                        } else if (resource instanceof IFolder) {
-                            ReleaseEngineeringPlugin.getMsgStream().println("  Scanning folder " + resource.getLocation().toPortableString());
-                        }
-                        return true;
-                    }
-                });
-            } catch (CoreException e) {
-                logError(e);
-                e.printStackTrace();
-            }
-        }
-	}
 
     /**
      * @param projects
