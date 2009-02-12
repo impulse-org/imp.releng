@@ -24,7 +24,8 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.debug.ui,
  org.eclipse.ui.ide,
  org.eclipse.ltk.ui.refactoring,
- org.eclipse.compare
+ org.eclipse.compare,
+ org.tigris.subversion.subclipse.core
 Eclipse-LazyStart: true
 Bundle-Vendor: rfuhrer@watson.ibm.com
 Bundle-RequiredExecutionEnvironment: J2SE-1.5

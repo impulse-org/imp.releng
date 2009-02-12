@@ -22,6 +22,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -99,6 +101,15 @@ import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.MessageConsoleStream;
 import org.eclipse.ui.progress.IProgressService;
+import org.tigris.subversion.subclipse.core.SVNClientManager;
+import org.tigris.subversion.subclipse.core.SVNTeamProvider;
+import org.tigris.subversion.subclipse.core.SVNTeamProviderType;
+import org.tigris.subversion.subclipse.core.commands.BranchTagCommand;
+import org.tigris.subversion.subclipse.core.repo.SVNRepositoryLocation;
+import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
+import org.tigris.subversion.svnclientadapter.SVNRevision;
+import org.tigris.subversion.svnclientadapter.SVNUrl;
+import org.tigris.subversion.svnclientadapter.utils.SVNUrlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -1212,7 +1223,14 @@ public abstract class ReleaseTool {
             String featureID= featureInfo.fFeatureID;
             String featureVersion= featureInfo.fFeatureVersion;
             IProject project= featureInfo.fProject;
-            String tag= featureID.replace('.', '-') + "_" + featureVersion.replace('.', '_');
+            RepositoryProvider repoProvider= RepositoryProvider.getProvider(project);
+            String tag;
+
+            if (repoProvider.getID().contains("subclipse")) {
+                tag= featureVersion;
+            } else {
+                tag= featureID.replace('.', '-') + "_" + featureVersion.replace('.', '_');
+            }
 
             result.put(project, tag);
 
@@ -1237,46 +1255,62 @@ public abstract class ReleaseTool {
 
         for(IProject project: projectTagMap.keySet()) {
             String projectTag= projectTagMap.get(project);
-            Set localOptions = new HashSet();
-            LocalOption[] commandOptions = (LocalOption[]) localOptions.toArray(new LocalOption[localOptions.size()]);
+            RepositoryProvider repoProvider= RepositoryProvider.getProvider(project);
 
-            commandOptions = Command.DO_NOT_RECURSE.removeFrom(commandOptions);
+            if (repoProvider.getID().contains("subclipse")) {
+                try {
+                    SVNTeamProvider svnProvider= (SVNTeamProvider) repoProvider;
+                    SVNWorkspaceRoot svnRoot= svnProvider.getSVNWorkspaceRoot();
+                    SVNUrl projTrunkURL= SVNWorkspaceRoot.getSVNFolderFor(project).getUrl();
+                    SVNUrl projTagURL= projTrunkURL.getParent().appendPath("/tags/release-" + projectTag);
+                    BranchTagCommand tagCmd= new BranchTagCommand(svnRoot, project, projTrunkURL, projTagURL, "tagged for latest release", true, SVNRevision.HEAD);
 
-            CVSTag tag= new CVSTag(projectTag, CVSTag.VERSION);
-            CVSTeamProvider provider = (CVSTeamProvider) RepositoryProvider.getProvider(project);
-
-            // Build the arguments list
-            String[] arguments = getStringArguments(new IResource[] { project });
-            Session s= null;
-
-            try {
-                // Execute the command
-                CVSWorkspaceRoot root= provider.getCVSWorkspaceRoot();
-                s = new Session(root.getRemoteLocation(), root.getLocalRoot());
-
-                // Opening the session takes 20% of the time
-                s.open(subMonitorFor(progress, 20), true /* open for modification */);
-                IStatus status= Command.TAG.execute(s,
-                        Command.NO_GLOBAL_OPTIONS,
-                        commandOptions,
-                        tag,
-                        arguments,
-                        null,
-                        subMonitorFor(progress, 80));
-                if (status.getSeverity() != IStatus.OK) {
-                    System.err.println("Tag command execution finished: " + status.getMessage());
-                    IStatus[] children= status.getChildren();
-                    if (children != null && children.length > 0) {
-                        for(int i= 0; i < children.length; i++) {
-                            System.err.println(children[i].getMessage());
+                    tagCmd.run(new SubProgressMonitor(progress, 1));
+                } catch (TeamException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Set localOptions = new HashSet();
+                LocalOption[] commandOptions = (LocalOption[]) localOptions.toArray(new LocalOption[localOptions.size()]);
+    
+                commandOptions = Command.DO_NOT_RECURSE.removeFrom(commandOptions);
+    
+                CVSTag tag= new CVSTag(projectTag, CVSTag.VERSION);
+                CVSTeamProvider provider = (CVSTeamProvider) RepositoryProvider.getProvider(project);
+    
+                // Build the arguments list
+                String[] arguments = getStringArguments(new IResource[] { project });
+                Session s= null;
+    
+                try {
+                    // Execute the command
+                    CVSWorkspaceRoot root= provider.getCVSWorkspaceRoot();
+                    s = new Session(root.getRemoteLocation(), root.getLocalRoot());
+    
+                    // Opening the session takes 20% of the time
+                    s.open(subMonitorFor(progress, 20), true /* open for modification */);
+                    IStatus status= Command.TAG.execute(s,
+                            Command.NO_GLOBAL_OPTIONS,
+                            commandOptions,
+                            tag,
+                            arguments,
+                            null,
+                            subMonitorFor(progress, 80));
+                    if (status.getSeverity() != IStatus.OK) {
+                        System.err.println("Tag command execution finished: " + status.getMessage());
+                        IStatus[] children= status.getChildren();
+                        if (children != null && children.length > 0) {
+                            for(int i= 0; i < children.length; i++) {
+                                System.err.println(children[i].getMessage());
+                            }
                         }
                     }
+                } catch (CVSException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (s != null)
+                        s.close();
                 }
-            } catch (CVSException e) {
-                e.printStackTrace();
-            } finally {
-                if (s != null)
-                    s.close();
             }
         }
         progress.done();
