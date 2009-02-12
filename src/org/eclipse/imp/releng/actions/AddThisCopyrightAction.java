@@ -21,6 +21,7 @@ import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
@@ -49,7 +50,8 @@ public class AddThisCopyrightAction implements IWorkbenchWindowActionDelegate {
 				fResource= (IResource) ((IAdaptable) first).getAdapter(IResource.class);
 			}
     	} else if (selection instanceof ITextSelection) {
-    		IEditorInput input= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor().getEditorInput();
+    		IEditorPart activeEditor= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+            IEditorInput input= (activeEditor != null) ? activeEditor.getEditorInput() : null;
     		if (input instanceof IFileEditorInput) {
     			IFileEditorInput fileInp= (IFileEditorInput) input;
     			fResource= fileInp.getFile();
