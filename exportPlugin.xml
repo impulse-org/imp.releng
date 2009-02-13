@@ -14,9 +14,15 @@
 			<classpath>
 				<pathelement path="${plugin.dependencies}"/>
 				<pathelement path="${eclipse.build.path}"/>
+                <!-- Some of the subclipse API classes are in this jar that's embedded in the
+                     org.tigris.subversion.subclipse.core plugin jar.
+                     Don't know of a way to get javac to look inside it, so we keep a copy
+                     outside the plugin jar (ugh).
+                     Perhaps life is better under subversive... -->
+                <pathelement location="lib/svnClientAdapter.jar"/>
 			</classpath>
 			<src path="src/"/>
-			</javac>
+		</javac>
 		<!-- Copy necessary resources -->
 		<copy todir="${temp.folder}/${plugin.jar.name}.bin" failonerror="true" overwrite="false">
 			<fileset dir="src/" excludes="**/*.java,**/package.htm*"/>
