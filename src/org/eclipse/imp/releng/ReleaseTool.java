@@ -45,9 +45,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IStorage;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceDescription;
 import org.eclipse.core.resources.IWorkspaceRoot;
@@ -84,11 +86,15 @@ import org.eclipse.team.core.TeamException;
 import org.eclipse.team.core.history.IFileHistory;
 import org.eclipse.team.core.history.IFileHistoryProvider;
 import org.eclipse.team.core.history.IFileRevision;
+import org.eclipse.team.core.history.provider.FileHistory;
+import org.eclipse.team.core.history.provider.FileHistoryProvider;
+import org.eclipse.team.core.history.provider.FileRevision;
 import org.eclipse.team.internal.ccvs.core.CVSException;
 import org.eclipse.team.internal.ccvs.core.CVSProviderPlugin;
 import org.eclipse.team.internal.ccvs.core.CVSTag;
 import org.eclipse.team.internal.ccvs.core.CVSTeamProvider;
 import org.eclipse.team.internal.ccvs.core.CVSWorkspaceSubscriber;
+import org.eclipse.team.internal.ccvs.core.ICVSFile;
 import org.eclipse.team.internal.ccvs.core.client.Command;
 import org.eclipse.team.internal.ccvs.core.client.Session;
 import org.eclipse.team.internal.ccvs.core.client.Command.LocalOption;
@@ -98,17 +104,115 @@ import org.eclipse.text.edits.ReplaceEdit;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.MessageConsoleStream;
 import org.eclipse.ui.progress.IProgressService;
+import org.tigris.subversion.subclipse.core.ISVNLocalFile;
+import org.tigris.subversion.subclipse.core.ISVNRemoteFile;
+import org.tigris.subversion.subclipse.core.ISVNRemoteResource;
+import org.tigris.subversion.subclipse.core.SVNException;
 import org.tigris.subversion.subclipse.core.SVNTeamProvider;
 import org.tigris.subversion.subclipse.core.commands.BranchTagCommand;
 import org.tigris.subversion.subclipse.core.resources.SVNWorkspaceRoot;
 import org.tigris.subversion.svnclientadapter.SVNRevision;
 import org.tigris.subversion.svnclientadapter.SVNUrl;
+import org.tigris.subversion.svnclientadapter.SVNRevision.Number;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 public abstract class ReleaseTool {
+    /**
+     * A mostly bogus implementation of IFileHistory for Subclipse, enough to get "Increment Feature Versions"
+     * working, or thereabouts...
+     */
+    private class SubclipseFileHistory extends FileHistory {
+        protected IFileRevision[] revisions;
+        
+        public SubclipseFileHistory(IResource svnRsrc) {
+//          SVNTeamProvider prov= (SVNTeamProvider) RepositoryProvider.getProvider(svnRsrc.getProject());
+            ISVNLocalFile f= SVNWorkspaceRoot.getSVNFileFor((IFile) svnRsrc);
+
+            try {
+                ISVNRemoteResource latestRsrc= SVNWorkspaceRoot.getLatestResourceFor(svnRsrc);
+                final ISVNRemoteFile latestRemote= (ISVNRemoteFile) latestRsrc;
+                final Number revNum= latestRemote.getLastChangedRevision();
+//              ISVNRemoteResource baseResource= f.getBaseResource();
+//              final SVNRevision revision= baseResource.getRevision();
+
+                revisions= new IFileRevision[] { new FileRevision() {
+                    @Override
+                    public String getContentIdentifier() {
+                        return revNum.toString();
+                    }
+                    @Override
+                    public String getAuthor() {
+                        return latestRemote.getAuthor();
+                    }
+                    public String getName() {
+                        return revNum.toString();
+                    }
+                    public IStorage getStorage(IProgressMonitor monitor) throws CoreException {
+                        return null;
+                    }
+                    public boolean isPropertyMissing() {
+                        return false;
+                    }
+                    public IFileRevision withAllProperties(IProgressMonitor monitor) throws CoreException {
+                        return this;
+                    } }
+                };
+            } catch (SVNException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public IFileRevision[] getContributors(IFileRevision revision) {
+            return new IFileRevision[0];
+        }
+
+        public IFileRevision getFileRevision(String id) {
+            IFileRevision[] revisions = getFileRevisions();
+            for (int i = 0; i < revisions.length; i++) {
+                if (revisions[i].getContentIdentifier().equals(id))
+                    return revisions[i];
+            }
+            return null;
+        }
+
+        public IFileRevision[] getFileRevisions() {
+            return revisions;
+        }
+
+        public IFileRevision[] getTargets(IFileRevision revision) {
+            return new IFileRevision[0];
+        }
+    }
+
+    /**
+     * A mostly bogus implementation of IFileHistoryProvider for Subclipse, enough to get "Increment Feature Versions"
+     * working, or thereabouts...
+     */
+    public class SubclipseFileHistoryProvider extends FileHistoryProvider implements IFileHistoryProvider {
+        private final IProject fProject;
+
+        public SubclipseFileHistoryProvider(IProject project) {
+            fProject= project;
+        }
+
+        public IFileHistory getFileHistoryFor(IResource resource, int flags, IProgressMonitor monitor) {
+            return new SubclipseFileHistory(resource);
+        }
+
+        public IFileHistory getFileHistoryFor(IFileStore store, int flags, IProgressMonitor monitor) {
+            IFile file= fProject.getFile(store.fetchInfo().getName());
+
+            return new SubclipseFileHistory(file);
+        }
+
+        public IFileRevision getWorkspaceFileRevision(IResource resource) {
+            return getFileHistoryFor(resource, 0, null).getFileRevisions()[0];
+        }
+    }
+
     protected IWorkspaceRoot fWSRoot= ResourcesPlugin.getWorkspace().getRoot();
 
     /**
@@ -618,10 +722,14 @@ public abstract class ReleaseTool {
                 continue;
             }
 
-            final IFileHistoryProvider fileHistProvider= repoProvider.getFileHistoryProvider();
+            IFileHistoryProvider fileHistProvider= repoProvider.getFileHistoryProvider();
 
             if (fileHistProvider == null) {
-                continue;
+                if (repoProvider instanceof SVNTeamProvider) {
+                    fileHistProvider= new SubclipseFileHistoryProvider(pluginProject);
+                } else {
+                    continue;
+                }
             }
 
             List<IPath> buildItems= readBuildProperties(pluginProject);
@@ -866,6 +974,9 @@ public abstract class ReleaseTool {
         saveFeatureProjectSets(selectedFeatures);
     }
 
+    /**
+     * Updates the Team Project Set listing the set of features that belong to the given update site.
+     */
     public void writeSiteFeatureSet(UpdateSiteInfo siteInfo) {
         Map<String/*repoTypeID*/,Set<String/*repoRef*/>> repoRefMap= new HashMap<String,Set<String>>();
 
@@ -877,12 +988,20 @@ public abstract class ReleaseTool {
         writeProjectSet(repoRefMap, siteInfo.fProject, "features.psf");
     }
 
+    /**
+     * Updates the Team Project Set for each update site project that list the set of features
+     * that belong to that update site.
+     */
     public void writeAllSiteFeatureSets() {
         for(UpdateSiteInfo siteInfo: fUpdateSiteInfos) {
             writeSiteFeatureSet(siteInfo);
         }
     }
 
+    /**
+     * Updates each update site manifest by adding the latest (workspace) version
+     * of each feature that belongs to the site.
+     */
     public void updateUpdateSites() {
         collectMetaData(true);
 
@@ -1256,7 +1375,7 @@ public abstract class ReleaseTool {
                     SVNWorkspaceRoot svnRoot= svnProvider.getSVNWorkspaceRoot();
                     SVNUrl projTrunkURL= SVNWorkspaceRoot.getSVNFolderFor(project).getUrl();
                     SVNUrl projTagURL= projTrunkURL.getParent().appendPath("/tags/release-" + projectTag);
-                    BranchTagCommand tagCmd= new BranchTagCommand(svnRoot, project, projTrunkURL, projTagURL, "tagged for latest release", true, SVNRevision.HEAD);
+                    BranchTagCommand tagCmd= new BranchTagCommand(svnRoot, new IResource[] { project }, new SVNUrl[] { projTrunkURL }, projTagURL, "tagged for latest release", true, SVNRevision.HEAD);
 
                     tagCmd.run(new SubProgressMonitor(progress, 1));
                 } catch (TeamException e) {
