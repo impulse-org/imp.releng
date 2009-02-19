@@ -141,7 +141,7 @@ public class UpdateSiteInfo {
                 String featID= child.getAttributes().getNamedItem("id").getNodeValue();
                 String featVers= child.getAttributes().getNamedItem("version").getNodeValue();
                 String featURL= child.getAttributes().getNamedItem("url").getNodeValue();
-                String featCat= "???";
+                String featCat= null;
                 NodeList featChildren= child.getChildNodes();
 
                 for(int j=0; j < featChildren.getLength(); j++) {
@@ -202,7 +202,9 @@ public class UpdateSiteInfo {
         nl(sb);
         for(FeatureRef featRef: fFeatureRefs) {
             sb.append("  <feature url=\"" + featRef.getURL() + "\" id=\"" + featRef.getID() + "\" version=\"" + featRef.getVersion() + "\">"); nl(sb);
-            sb.append("    <category name=\"" + featRef.getCategory() + "\"/>"); nl(sb);
+            if (featRef.getCategory() != null) {
+                sb.append("    <category name=\"" + featRef.getCategory() + "\"/>"); nl(sb);
+            }
             sb.append("  </feature>"); nl(sb);
             nl(sb);
         }
