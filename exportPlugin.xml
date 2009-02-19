@@ -12,14 +12,15 @@
 		<javac destdir="${temp.folder}/${plugin.jar.name}.bin" failonerror="${javacFailOnError}" verbose="${javacVerbose}" debug="${javacDebugInfo}" includeAntRuntime="no" bootclasspath="${bootclasspath}" source="${javacSource}" target="${javacTarget}"		>
 			<compilerarg line="${compilerArg}"/>
 			<classpath>
-				<pathelement path="${plugin.dependencies}"/>
-				<pathelement path="${eclipse.build.path}"/>
                 <!-- Some of the subclipse API classes are in this jar that's embedded in the
                      org.tigris.subversion.subclipse.core plugin jar.
                      Don't know of a way to get javac to look inside it, so we keep a copy
                      outside the plugin jar (ugh).
                      Perhaps life is better under subversive... -->
-                <pathelement location="lib/svnClientAdapter.jar"/>
+                <pathelement location="lib/org.tigris.subversion.subclipse.core_1.4.7.jar"/>
+                <pathelement location="lib/org.tigris.subversion.clientadapter_1.5.2.jar"/>
+                <pathelement path="${plugin.dependencies}"/>
+                <pathelement path="${eclipse.build.path}"/>
 			</classpath>
 			<src path="src/"/>
 		</javac>
