@@ -7,7 +7,6 @@
 *
 * Contributors:
 *    Robert Fuhrer (rfuhrer@watson.ibm.com) - initial API and implementation
-
 *******************************************************************************/
 
 package org.eclipse.imp.releng;
@@ -27,12 +26,15 @@ import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.graphics.Font;
+import org.eclipse.swt.graphics.FontData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
+import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWizard;
 import org.eclipse.ui.PlatformUI;
@@ -52,6 +54,10 @@ public class DashboardView extends ViewPart {
 
     private ReleaseTool fReleaseTool= new WorkbenchReleaseTool();
 
+    private FontData EXPLANATION_FONT_DATA= new FontData("default", 12, SWT.ITALIC);
+
+    private Font fExplanationFont;
+
     public DashboardView() {
         fReleaseTool.collectMetaData(true);
     }
@@ -64,6 +70,8 @@ public class DashboardView extends ViewPart {
     public void createPartControl(Composite parent) {
         fToolkit= new FormToolkit(parent.getDisplay());
         fToolkit.setBorderStyle(SWT.BORDER);
+
+        fExplanationFont= new Font(parent.getDisplay(), EXPLANATION_FONT_DATA);
 
         fForm= fToolkit.createScrolledForm(parent);
         fForm.setText("IMP Release Engineering");
@@ -79,7 +87,7 @@ public class DashboardView extends ViewPart {
 
         createPluginListSection();
 
-        Button saveButton= fToolkit.createButton(fForm.getBody(), "Save", SWT.PUSH);
+        Button saveButton= fToolkit.createButton(fForm.getBody(), "Save (TBD)", SWT.PUSH);
 
         saveButton.setLayoutData(new TableWrapData(TableWrapData.LEFT, TableWrapData.FILL, 1, 1));
         saveButton.addSelectionListener(new SelectionListener() {
@@ -89,7 +97,7 @@ public class DashboardView extends ViewPart {
             public void widgetDefaultSelected(SelectionEvent e) { }
         });
 
-        Button revertButton= fToolkit.createButton(fForm.getBody(), "Revert", SWT.PUSH);
+        Button revertButton= fToolkit.createButton(fForm.getBody(), "Revert (TBD)", SWT.PUSH);
 
         revertButton.setLayoutData(new TableWrapData(TableWrapData.LEFT, TableWrapData.FILL, 1, 1));
         revertButton.addSelectionListener(new SelectionListener() {
@@ -144,12 +152,17 @@ public class DashboardView extends ViewPart {
         fPluginTable.setLinesVisible(true);
 
         Composite buttonComposite= fToolkit.createComposite(pluginsClient);
-        buttonComposite.setLayout(new RowLayout(SWT.VERTICAL));
+        buttonComposite.setLayout(new GridLayout(2, false));
 
         Button newPluginButton= fToolkit.createButton(buttonComposite, "New Plugin...", SWT.PUSH);
+        newPluginButton.setToolTipText("Start the wizard to create a new plugin project.");
         addWizardRunner(newPluginButton, "org.eclipse.pde.ui.NewProjectWizard");
+        Text t= fToolkit.createText(buttonComposite, "Start the wizard to create a new plugin project.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
 
-        Button addPluginButton= fToolkit.createButton(buttonComposite, "Add Plugin...", SWT.PUSH);
+        Button addPluginButton= fToolkit.createButton(buttonComposite, "Add Plugin... (TBD)", SWT.PUSH);
+        addPluginButton.setToolTipText("Add an existing plugin to the given feature.");
         addPluginButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
@@ -162,6 +175,9 @@ public class DashboardView extends ViewPart {
 //              fReleaseTool.rewriteFeatureManifest(fSelectedFeature);
             }
         });
+        t= fToolkit.createText(buttonComposite, "Add an existing plugin to the given feature.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
     }
 
     private void createFeatureListSection() {
@@ -195,20 +211,31 @@ public class DashboardView extends ViewPart {
         });
 
         Composite buttonComposite= fToolkit.createComposite(featuresClient);
-        buttonComposite.setLayout(new RowLayout(SWT.VERTICAL));
+        buttonComposite.setLayout(new GridLayout(2, false));
 
         Button newFeatureButton= fToolkit.createButton(buttonComposite, "New Feature...", SWT.PUSH);
         addWizardRunner(newFeatureButton, "org.eclipse.pde.ui.NewFeatureProjectWizard");
+        newFeatureButton.setToolTipText("Start the wizard for creating a new feature project.");
+        Text t= fToolkit.createText(buttonComposite, "Start the wizard for creating a new feature project.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
 
         Button incrementVersionsButton= fToolkit.createButton(buttonComposite, "Increment Feature Versions...", SWT.PUSH);
+        incrementVersionsButton.setToolTipText("Examines the files contributing to each feature to determine whether changes warrant increasing the version #.");
         incrementVersionsButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.incrementVersions();
             }
         });
+        t= fToolkit.createText(buttonComposite, "Examines the files contributing to each feature to\n" +
+                "determine whether changes warrant increasing the\n" +
+                "version #.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
 
         Button addFeatureButton= fToolkit.createButton(buttonComposite, "Add Feature...", SWT.PUSH);
+        addFeatureButton.setToolTipText("Add an existing feature to the set of features published on a given update site.");
         addFeatureButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
@@ -220,30 +247,50 @@ public class DashboardView extends ViewPart {
                 fReleaseTool.rewriteUpdateSiteManifests(Collections.singletonList(fSelectedSite));
             }
         });
+        t= fToolkit.createText(buttonComposite, "Examines the files contributing to each feature to\n" +
+                "determine whether changes warrant increasing the\n" +
+                "version #.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
 
         Button updateFeatureProjectSetsButton= fToolkit.createButton(buttonComposite, "Update the Feature Project Set...", SWT.PUSH);
+        updateFeatureProjectSetsButton.setToolTipText("Update the Team Project Set listing the plugin projects that belong to the feature using information from the feature manifest.");
         updateFeatureProjectSetsButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.updateFeatureProjectSets();
             }
         });
+        t= fToolkit.createText(buttonComposite, "Update the Team Project Set listing the plugin projects\n" +
+                "that belong to the feature using information from the\n" +
+                "feature manifest.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
 
         Button updateAllFeatureProjectSetsButton= fToolkit.createButton(buttonComposite, "Update All Feature Project Sets...", SWT.PUSH);
+        updateAllFeatureProjectSetsButton.setToolTipText("Update the Team Project Sets for all known features.");
         updateAllFeatureProjectSetsButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.updateFeatureProjectSets();
             }
         });
+        t= fToolkit.createText(buttonComposite, "Update the Team Project Sets for all known features.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+        t.setSize(250, EXPLANATION_FONT_DATA.getHeight()+2);
 
         Button tagFeaturesButton= fToolkit.createButton(buttonComposite, "Tag Feature Versions...", SWT.PUSH);
+        tagFeaturesButton.setToolTipText("Tags the current versions of all files in projects in selected features with that feature's version #.");
         tagFeaturesButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.tagFeatures();
             }
         });
+        t= fToolkit.createText(buttonComposite, "Tags the current versions of all files in projects in\n" +
+                "selected features with that feature's version #.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+
         buttonComposite.pack();
     }
 
@@ -286,7 +333,7 @@ public class DashboardView extends ViewPart {
 
         siteSectionClient.setLayout(siteSectLayout);
 
-        siteSectLayout.numColumns= 2;
+        siteSectLayout.numColumns= 3;
         siteSectLayout.verticalSpacing= 3;
         siteSectionClient.setLayout(siteSectLayout);
         siteSection.setClient(siteSectionClient);
@@ -315,33 +362,48 @@ public class DashboardView extends ViewPart {
         siteTable.pack();
 
         Composite buttonComposite= fToolkit.createComposite(siteSectionClient);
-        buttonComposite.setLayout(new RowLayout(SWT.VERTICAL));
+        buttonComposite.setLayout(new GridLayout(2, false));
 
         Button newSiteButton= fToolkit.createButton(buttonComposite, "New Site...", SWT.PUSH);
         addWizardRunner(newSiteButton, "org.eclipse.pde.ui.NewSiteProjectWizard");
+        newSiteButton.setToolTipText("Start the wizard for creating a new update site project.");
+        Text t= fToolkit.createText(buttonComposite, "Start the wizard for creating a new update site project.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
 
         Button updateSiteContentsButton= fToolkit.createButton(buttonComposite, "Update the Site Manifest...", SWT.PUSH);
+        updateSiteContentsButton.setToolTipText("Updates each update site manifest by adding the latest (workspace) version " + 
+        		"of each feature that belongs to the site.");
         updateSiteContentsButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.updateUpdateSites();
             }
         });
+        t= fToolkit.createText(buttonComposite, "Updates each update site manifest by adding the latest\n" +
+                "(workspace) version of each feature that\nbelongs to the site.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
 
         Button updateUpdateSiteProjectSetButton= fToolkit.createButton(buttonComposite, "Update the Site Project Set...", SWT.PUSH);
+        updateUpdateSiteProjectSetButton.setToolTipText("Updates the site's Team Project Set (features.psf) to include all feature projects published on the update site.");
         updateUpdateSiteProjectSetButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.writeSiteFeatureSet(fSelectedSite);
             }
         });
+        t= fToolkit.createText(buttonComposite, "Updates the site's Team Project Set (features.psf) to\ninclude all feature projects published on the\nupdate site.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
+
         Button updateAllUpdateSiteProjectSetsButton= fToolkit.createButton(buttonComposite, "Update All Site Project Sets...", SWT.PUSH);
+        updateAllUpdateSiteProjectSetsButton.setToolTipText("Updates all update site projects' Team Project Sets.");
         updateAllUpdateSiteProjectSetsButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
                 fReleaseTool.writeAllSiteFeatureSets();
             }
         });
+        t= fToolkit.createText(buttonComposite, "Updates all update site projects' Team Project Sets.", SWT.MULTI | SWT.READ_ONLY);
+        t.setFont(fExplanationFont);
     }
 
     private void addWizardRunner(Button button, final String wizardID) {
@@ -364,6 +426,7 @@ public class DashboardView extends ViewPart {
     @Override
     public void dispose() {
         fToolkit.dispose();
+        fExplanationFont.dispose();
         super.dispose();
     }
 
