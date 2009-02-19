@@ -53,7 +53,7 @@ public class VersionScanner {
      * Updates the given FileVersionMap with the workspace copy's version # for the
      * file at the given path. If the given file doesn't exist yet, assigns version
      * "1.1".
-     * @return true if the given file is not dirty
+     * @return a set containing the given file, if dirty, or empty, if not
      */
     public Set<IFile> checkFile(String projRelFilePath, IProject pluginProject, final IFileHistoryProvider histProvider, final FileVersionMap fileVersionMap) {
         IFile file= pluginProject.getFile(projRelFilePath);
@@ -72,7 +72,7 @@ public class VersionScanner {
      * for the workspace copy of the given IFile.<br>
      * Issues a diagnostic message if the workspace copy is dirty. <b>NOTE: This
      * functionality is currently disabled due to a bug in Team/CVS.</b>
-     * @return true if the given file is not dirty
+     * @return a set containing the given file, if dirty, or empty, if not
      */
     private Set<IFile> checkFile(IFile file, final IFileHistoryProvider histProvider, final FileVersionMap fileVersionMap) {
         IFileRevision fileRev= histProvider.getWorkspaceFileRevision(file);
@@ -122,6 +122,9 @@ public class VersionScanner {
         return CVSProviderPlugin.getPlugin().getCVSWorkspaceSubscriber();
     }
 
+    /**
+     * @return the set of dirty files in the given project
+     */
     public Set<IFile> scanSrcFolders(IProject pluginProject, final IFileHistoryProvider histProvider, final FileVersionMap fileVersionMap) {
         IJavaProject pluginJavaProject= JavaCore.create(pluginProject);
         List<IPath> srcFolderPaths= collectSrcFolders(pluginJavaProject);
