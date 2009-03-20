@@ -1336,15 +1336,15 @@ public abstract class ReleaseTool {
             String featureVersion= featureInfo.fFeatureVersion;
             IProject project= featureInfo.fProject;
             RepositoryProvider repoProvider= RepositoryProvider.getProvider(project);
-            String tag;
+            String featureTag;
 
             if (repoProvider.getID().contains("subclipse")) {
-                tag= featureVersion;
+                featureTag= featureVersion;
             } else {
-                tag= featureID.replace('.', '-') + "_" + featureVersion.replace('.', '_');
+                featureTag= featureID.replace('.', '-') + "_" + featureVersion.replace('.', '_');
             }
 
-            result.put(project, tag);
+            result.put(project, featureTag);
 
             Set<PluginInfo> plugins= featureInfo.fPluginInfos;
 
@@ -1354,7 +1354,15 @@ public abstract class ReleaseTool {
                 if (pluginProject == null) {
                     postError("Unable to find project for plugin " + pluginInfo.fPluginID, null);
                 } else {
-                    result.put(pluginProject, tag);
+                    String pluginVersion= pluginInfo.fPluginVersion;
+                    String pluginTag;
+
+                    if (repoProvider.getID().contains("subclipse")) {
+                        pluginTag= pluginVersion;
+                    } else {
+                        pluginTag= featureID.replace('.', '-') + "_" + featureVersion.replace('.', '_');
+                    }
+                    result.put(pluginProject, pluginTag);
                 }
             }
         }
@@ -1379,7 +1387,12 @@ public abstract class ReleaseTool {
 
                     tagCmd.run(new SubProgressMonitor(progress, 1));
                 } catch (TeamException e) {
-                    e.printStackTrace();
+                    MessageConsoleStream msgStream= ReleaseEngineeringPlugin.getMsgStream();
+                    msgStream.println(e.getMessage());
+                    StackTraceElement[] st= e.getStackTrace();
+                    for(int i=0; i < st.length; i++) {
+                        msgStream.println(st[i].toString());
+                    }
                 }
             } else {
                 Set localOptions = new HashSet();
