@@ -60,10 +60,12 @@ import org.eclipse.imp.releng.metadata.UpdateSiteInfo.FeatureRef;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.team.core.RepositoryProvider;
 import org.eclipse.team.core.history.IFileHistoryProvider;
@@ -86,10 +88,20 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         return PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
     }
 
+    protected Display getDisplay() {
+        return PlatformUI.getWorkbench().getDisplay();
+    }
+
     @Override
     protected void postError(String errorMsg, Exception e) {
         MessageDialog.openError(getShell(), "Error", errorMsg);
         ReleaseEngineeringPlugin.getMsgStream().println(errorMsg);
+    }
+
+    @Override
+    protected void emitErrorMsg(String msg) {
+        MessageConsoleStream msgStream= ReleaseEngineeringPlugin.getErrorStream();
+        msgStream.println(msg);
     }
 
     @Override
@@ -318,7 +330,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
             // There doesn't appear to be enough published API to initiate an Ant build programmatically.
             AntLaunchShortcut als= new AntLaunchShortcut();
             als.setShowDialog(false);
-            als.launch(buildScript, ILaunchManager.RUN_MODE, "build.update.zip");
+            als.launch(buildScript.getFullPath(), buildScript.getProject(), ILaunchManager.RUN_MODE, "build.update.zip");
         }
     }
 
@@ -423,34 +435,35 @@ public class WorkbenchReleaseTool extends ReleaseTool {
                         updateSiteInfo.fProject, updateTemplate.getDestPath(),
                         updateSubs, relengBundle, monitor);
             }
-            for(FeatureRef featureRef: updateSiteInfo.fFeatureRefs) {
-                FeatureInfo featureInfo= findFeatureInfo(featureRef.getID());
-                Map<String,String> featureSubs= new HashMap<String, String>();
-
-                featureSubs.put("%%FEATURE_ID%%", featureRef.getID());
-                featureSubs.put("%%FEATURE_PROJ_NAME%%", featureInfo.fProject.getName());
-                featureSubs.putAll(updateSubs);
-
-                for(TemplateInfo featureTemplate: sFeatureTemplates) {
-                    instantiateTemplate(featureTemplate.getTemplateName(), "featureTemplates/",
-                            featureInfo.fProject, featureTemplate.getDestPath(),
-                            featureSubs, relengBundle, monitor);
-                }
-
-                for(PluginInfo pluginInfo: featureInfo.fPluginInfos) {
-                    IProject pluginProject= pluginInfo.fManifest.getProject();
-                    Map<String,String> pluginSubs= new HashMap<String, String>();
-
-                    pluginSubs.put("%%PLUGIN_ID%%", pluginInfo.fPluginID);
-                    pluginSubs.putAll(featureSubs);
-
-                    for(TemplateInfo pluginTemplate: sPluginTemplates) {
-                        instantiateTemplate(pluginTemplate.getTemplateName(), "pluginTemplates/",
-                                pluginProject, pluginTemplate.getDestPath(),
-                                pluginSubs, relengBundle, monitor);
-                    }
-                }
-            }
+            // RMF 3 Feb 2010 - There is no longer a need for per-feature and per-plugin release scripts
+//            for(FeatureRef featureRef: updateSiteInfo.fFeatureRefs) {
+//                FeatureInfo featureInfo= findFeatureInfo(featureRef.getID());
+//                Map<String,String> featureSubs= new HashMap<String, String>();
+//
+//                featureSubs.put("%%FEATURE_ID%%", featureRef.getID());
+//                featureSubs.put("%%FEATURE_PROJ_NAME%%", featureInfo.fProject.getName());
+//                featureSubs.putAll(updateSubs);
+//
+//                for(TemplateInfo featureTemplate: sFeatureTemplates) {
+//                    instantiateTemplate(featureTemplate.getTemplateName(), "featureTemplates/",
+//                            featureInfo.fProject, featureTemplate.getDestPath(),
+//                            featureSubs, relengBundle, monitor);
+//                }
+//
+//                for(PluginInfo pluginInfo: featureInfo.fPluginInfos) {
+//                    IProject pluginProject= pluginInfo.fManifest.getProject();
+//                    Map<String,String> pluginSubs= new HashMap<String, String>();
+//
+//                    pluginSubs.put("%%PLUGIN_ID%%", pluginInfo.fPluginID);
+//                    pluginSubs.putAll(featureSubs);
+//
+//                    for(TemplateInfo pluginTemplate: sPluginTemplates) {
+//                        instantiateTemplate(pluginTemplate.getTemplateName(), "pluginTemplates/",
+//                                pluginProject, pluginTemplate.getDestPath(),
+//                                pluginSubs, relengBundle, monitor);
+//                    }
+//                }
+//            }
         }
     }
 
