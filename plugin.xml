@@ -8,91 +8,94 @@
             label="Release Engineering"
             visible="true">
          <menu
-               id="org.eclipse.imp.releaseEngineering.menu"
+               id="org.eclipse.imp.releaseEngineering.mainMenu"
                label="Release Engineering"
                path="edit">
-            <groupMarker name="org.eclipse.imp.releaseEngineering.releaseGroup"/>
             <groupMarker name="org.eclipse.imp.releaseEngineering.workspacePrepGroup"/>
+            <groupMarker name="org.eclipse.imp.releaseEngineering.workspaceManipGroup"/>
+            <groupMarker name="org.eclipse.imp.releaseEngineering.releaseGroup"/>
+            <groupMarker name="org.eclipse.imp.releaseEngineering.projectSetGroup"/>
          </menu>
-         <action
-               class="org.eclipse.imp.releng.actions.IncrementVersionsAction"
-               id="org.eclipse.imp.versionIncrementer.incrementVersion"
-               label="Increment Feature Versions"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
-               style="push"/>
-         <action
-               class="org.eclipse.imp.releng.actions.TagFeaturesAction"
-               id="org.eclipse.imp.releaseEngineering.tagFeatures"
-               label="Tag Features"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
-               style="push"/>
-         <action
-               class="org.eclipse.imp.releng.actions.PublishReleaseAction"
-               id="org.eclipse.imp.releaseEngineering.publishRelease"
-               label="Publish Release"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
-               style="push"/>
-         <action
-               class="org.eclipse.imp.releng.actions.BuildReleaseAction"
-               id="org.eclipse.imp.releng.buildRelease"
-               label="Build Release"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/releaseGroup"
-               style="push">
-         </action>
          <action
                class="org.eclipse.imp.releng.actions.RetrieveUpdateSiteAction"
                id="org.eclipse.imp.releaseEngineering.retrieveUpdateSite"
                label="Retrieve Update Site Project"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspacePrepGroup"
                style="push"/>
          <action
                class="org.eclipse.imp.releng.actions.RetrieveFeaturesAction"
                id="org.eclipse.imp.releaseEngineering.retrieveFeatures"
                label="Retrieve Features from Repository"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspacePrepGroup"
                style="push"/>
          <action
                class="org.eclipse.imp.releng.actions.RetrievePluginsAction"
                id="org.eclipse.imp.releaseEngineering.retrievePlugins"
                label="Retrieve Plugins from Repository"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspacePrepGroup"
                style="push"/>
          <action
                class="org.eclipse.imp.releng.actions.AddCopyrightAction"
                id="org.eclipse.imp.releaseEngineering.addCopyrightAction"
                label="Add Copyright Notice to Feature Source Files"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspaceManipGroup"
                style="push"/>
          <action
                class="org.eclipse.imp.releng.actions.AddThisCopyrightAction"
                id="org.eclipse.imp.releaseEngineering.addThisCopyrightAction"
                label="Add Copyright Notice to this Source File"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspaceManipGroup"
                style="push"/>
+<!--     <action
+               class="org.eclipse.imp.releng.actions.UpdateSiteAction"
+               id="org.eclipse.imp.releaseEngineering.updateUpdateSite"
+               label="Add New Feature Versions to Update Site"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspaceManipGroup"
+               style="push"/>
+  -->
+         <action
+               class="org.eclipse.imp.releng.actions.AddReleaseScriptsAction"
+               id="org.eclipse.imp.releng.addScriptsAction"
+               label="Add Release Scripts to Update Site Project"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/workspaceManipGroup">
+         </action>
+         <action
+               class="org.eclipse.imp.releng.actions.IncrementVersionsAction"
+               id="org.eclipse.imp.versionIncrementer.incrementVersion"
+               label="Increment Feature Versions"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.TagFeaturesAction"
+               id="org.eclipse.imp.releaseEngineering.tagFeatures"
+               label="Tag Features"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.PublishReleaseAction"
+               id="org.eclipse.imp.releaseEngineering.publishRelease"
+               label="Publish Release"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/releaseGroup"
+               style="push"/>
+         <action
+               class="org.eclipse.imp.releng.actions.BuildReleaseAction"
+               id="org.eclipse.imp.releng.buildRelease"
+               label="Build Release"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/releaseGroup"
+               style="push">
+         </action>
          <action
                class="org.eclipse.imp.releng.actions.UpdateFeatureListAction"
                id="org.eclipse.imp.releaseEngineering.updateFeatureList"
                label="Update Site Project Set"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/projectSetGroup"
                style="push"/>
          <action
                class="org.eclipse.imp.releng.actions.UpdateFeatureProjectSetsAction"
                id="org.eclipse.imp.releaseEngineering.updateFeatureProjectSets"
                label="Update Feature Project Sets"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
+               menubarPath="org.eclipse.imp.releaseEngineering.mainMenu/projectSetGroup"
                style="push"/>
-         <action
-               class="org.eclipse.imp.releng.actions.UpdateSiteAction"
-               id="org.eclipse.imp.releaseEngineering.updateUpdateSite"
-               label="Add New Feature Versions to Update Site"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup"
-               style="push"/>
-         <action
-               class="org.eclipse.imp.releng.actions.AddReleaseScriptsAction"
-               id="org.eclipse.imp.releng.addScriptsAction"
-               label="Add Release Scripts"
-               menubarPath="org.eclipse.imp.releaseEngineering.menu/workspacePrepGroup">
-         </action>
       </actionSet>
    </extension>
    <extension
