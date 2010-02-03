@@ -388,7 +388,7 @@ public class DashboardView extends ViewPart {
         updateUpdateSiteProjectSetButton.addSelectionListener(new SelectionListener() {
             public void widgetDefaultSelected(SelectionEvent e) { }
             public void widgetSelected(SelectionEvent e) {
-                fReleaseTool.writeSiteFeatureSet(fSelectedSite);
+                fReleaseTool.saveSiteProjectSet(fSelectedSite);
             }
         });
         t= fToolkit.createText(buttonComposite, "Updates the site's Team Project Set (features.psf) to\ninclude all feature projects published on the\nupdate site.", SWT.MULTI | SWT.READ_ONLY);
