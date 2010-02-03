@@ -65,6 +65,10 @@ public class FeatureSetDialog extends Dialog {
         public void setName(String name) {
             this.fFeatureId= name;
         }
+        @Override
+        public String toString() {
+            return "<" + fFeatureId + ">";
+        }
     }
 
     private final List<UpdateSiteInfo> fSites;
@@ -92,6 +96,12 @@ public class FeatureSetDialog extends Dialog {
     }
 
     @Override
+    protected void configureShell(Shell newShell) {
+        super.configureShell(newShell);
+        newShell.setText("Update features.psf Project Set");
+    }
+
+    @Override
     protected void createButtonsForButtonBar(Composite parent) {
         // create OK and Cancel buttons by default
         Button proceedButton= createButton(parent, IDialogConstants.OK_ID, "Proceed", true);
@@ -102,10 +112,11 @@ public class FeatureSetDialog extends Dialog {
             public void widgetSelected(SelectionEvent e) {
                 for(int i= 0; i < fItems.size(); i++) {
                     FeatureTableItem item= fItems.get(i);
+                    FeatureInfo featureInfo= fReleaseTool.findFeatureInfo(item.fFeatureId);
 
-                    fSite.addFeatureIfMissing(fReleaseTool.findFeatureInfo(item.fFeatureId));
+                    fSite.addFeatureIfMissing(featureInfo);
                 }
-                fReleaseTool.writeSiteFeatureSet(fSite);
+                fReleaseTool.saveSiteProjectSet(fSite);
             }
         });
     }
@@ -189,6 +200,9 @@ public class FeatureSetDialog extends Dialog {
             public void widgetSelected(SelectionEvent e) {
                 int idx= ((Combo) e.widget).getSelectionIndex();
                 fSite= fSites.get(idx);
+                initFeatureListFromUpdateSite(area, table, featureCol);
+            }
+            private void initFeatureListFromUpdateSite(final Composite area, final Table table, final TableColumn featureCol) {
                 table.removeAll();
                 List<FeatureInfo> features= fReleaseTool.readUpdateFeatureInfos(fSite);
                 for(FeatureInfo feature: features) {
