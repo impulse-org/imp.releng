@@ -12,6 +12,8 @@
 
 package org.eclipse.imp.releng;
 
+import org.eclipse.swt.SWT;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.console.ConsolePlugin;
 import org.eclipse.ui.console.IConsole;
 import org.eclipse.ui.console.IConsoleManager;
@@ -38,8 +40,9 @@ public class ReleaseEngineeringPlugin extends AbstractUIPlugin {
         return plugin;
     }
 
-    private MessageConsoleStream fMsgStream;
+    private MessageConsoleStream fInfoStream;
 
+    private MessageConsoleStream fErrorStream;
     /**
      * The constructor.
      */
@@ -54,7 +57,9 @@ public class ReleaseEngineeringPlugin extends AbstractUIPlugin {
         super.start(context);
 
         MessageConsole myConsole= findConsole();
-        fMsgStream= myConsole.newMessageStream();
+        fInfoStream= myConsole.newMessageStream();
+        fErrorStream= myConsole.newMessageStream();
+        fErrorStream.setColor(PlatformUI.getWorkbench().getDisplay().getSystemColor(SWT.COLOR_RED));
     }
 
     /**
@@ -85,7 +90,11 @@ public class ReleaseEngineeringPlugin extends AbstractUIPlugin {
     }
 
     public static MessageConsoleStream getMsgStream() {
-        return getInstance().fMsgStream;
+        return getInstance().fInfoStream;
+    }
+
+    public static MessageConsoleStream getErrorStream() {
+        return getInstance().fErrorStream;
     }
 
     public static void logError(Exception e) {
