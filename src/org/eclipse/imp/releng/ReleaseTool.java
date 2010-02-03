@@ -78,6 +78,7 @@ import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.ltk.core.refactoring.PerformChangeOperation;
 import org.eclipse.ltk.core.refactoring.RefactoringCore;
 import org.eclipse.ltk.core.refactoring.TextFileChange;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.team.core.ProjectSetCapability;
 import org.eclipse.team.core.ProjectSetSerializationContext;
 import org.eclipse.team.core.RepositoryProvider;
@@ -242,6 +243,10 @@ public abstract class ReleaseTool {
         return fFeatureInfos;
     }
 
+    protected void emitErrorMsg(String msg) {
+        ReleaseEngineeringPlugin.getMsgStream().println(msg);
+    }
+
     public void saveFeatureProjectSets(List<FeatureInfo> selectedFeatures) {
         for(FeatureInfo fi: selectedFeatures) {
             Map<String/*repoTypeID*/,Set<String/*repoRef*/>> repoRefMap= new HashMap<String,Set<String>>();
@@ -250,7 +255,7 @@ public abstract class ReleaseTool {
                 IProject pluginProject= fWSRoot.getProject(pi.fProjectName);
 
                 if (pluginProject == null || !pluginProject.exists()) {
-                    ReleaseEngineeringPlugin.getMsgStream().println("Unable to open project for plugin ID " + pi.fPluginID + "; ignoring.");
+                    emitErrorMsg("No project for plugin ID " + pi.fPluginID + "; omitting from project set file.");
                     continue;
                 }
 
@@ -259,9 +264,21 @@ public abstract class ReleaseTool {
                 addMapEntry(repoDesc.first, repoDesc.second, repoRefMap);
             }
 
-            IProject featureProject= fi.fProject;
-            writeProjectSet(repoRefMap, featureProject, "plugins.psf");
+            if (isEmptyProjectSet(repoRefMap)) {
+                emitErrorMsg("*** Empty project set for feature " + fi.fFeatureID + "; will not update plugins.psf.");
+            } else {
+                IProject featureProject= fi.fProject;
+                writeProjectSet(repoRefMap, featureProject, "plugins.psf");
+            }
         }
+    }
+
+    private boolean isEmptyProjectSet(Map<String, Set<String>> repoRefMap) {
+        int count= 0;
+        for(String repoTypeID: repoRefMap.keySet()) {
+            count += repoRefMap.get(repoTypeID).size();
+        }
+        return count == 0;
     }
 
     public void writeProjectSet(Map<String, Set<String>> repoRefMap, IProject hostProject, String fileName) {
@@ -977,13 +994,37 @@ public abstract class ReleaseTool {
     /**
      * Updates the Team Project Set listing the set of features that belong to the given update site.
      */
-    public void writeSiteFeatureSet(UpdateSiteInfo siteInfo) {
+    public void saveSiteProjectSet(UpdateSiteInfo siteInfo) {
         Map<String/*repoTypeID*/,Set<String/*repoRef*/>> repoRefMap= new HashMap<String,Set<String>>();
+        Set<String> featureIDs= new HashSet<String>();
+        Set<FeatureRef> features= new HashSet<FeatureRef>();
 
+        //
+        // The feature project set probably shouldn't be driven from the UpdateSiteInfo's featureRefs,
+        // since that refers to specific feature versions (and possibly several versions per feature),
+        // but rather from what's in update.properties.
+        //
+        // Perhaps we should incorporate a separate field in UpdateSiteInfo to collect that info?
+        //
         for(FeatureRef feature: siteInfo.fFeatureRefs) {
-            Pair<String/*repoTypeID*/,String/*repoRef*/> repoDesc= getRepoRefForProject(feature.findProject());
+            if (feature.getID().endsWith(".source")) {
+                // Source features are generated at build time, and aren't stored in the src repo
+                continue;
+            }
+            if (!featureIDs.contains(feature.getID())) {
+                featureIDs.add(feature.getID());
+                features.add(feature);
+            }
+        }
+        for(FeatureRef feature: features) {
+            IProject proj= feature.findProject();
+            if (proj != null && proj.exists()) {
+                Pair<String/*repoTypeID*/,String/*repoRef*/> repoDesc= getRepoRefForProject(proj);
 
-            WorkbenchReleaseTool.addMapEntry(repoDesc.first, repoDesc.second, repoRefMap);
+                WorkbenchReleaseTool.addMapEntry(repoDesc.first, repoDesc.second, repoRefMap);
+            } else {
+                emitErrorMsg("*** No project found for feature " + feature.getID() + "; omitting from project set.");
+            }
         }
         writeProjectSet(repoRefMap, siteInfo.fProject, "features.psf");
     }
@@ -994,7 +1035,7 @@ public abstract class ReleaseTool {
      */
     public void writeAllSiteFeatureSets() {
         for(UpdateSiteInfo siteInfo: fUpdateSiteInfos) {
-            writeSiteFeatureSet(siteInfo);
+            saveSiteProjectSet(siteInfo);
         }
     }
 
@@ -1058,13 +1099,13 @@ public abstract class ReleaseTool {
             DocumentBuilder docBuilder= factory.newDocumentBuilder();
             Document featureSetDoc= docBuilder.parse(new File(projectSetFile.getLocation().toOSString()));
             Node psfNode= featureSetDoc.getFirstChild();
-            NodeList providers= psfNode.getChildNodes();
+            NodeList providers= psfNode.getChildNodes(); // N.B. Also includes #text nodes
     
             for(int i=0; i < providers.getLength(); i++) {
                 Node provider= providers.item(i);
                 if ("provider".equals(provider.getNodeName())) {
                     String providerType= provider.getAttributes().getNamedItem("id").getNodeValue();
-                    NodeList projects= provider.getChildNodes();
+                    NodeList projects= provider.getChildNodes(); // N.B. Also includes #text nodes
 
                     for(int j=0; j < projects.getLength(); j++) {
                         Node project= projects.item(j);
@@ -1090,6 +1131,11 @@ public abstract class ReleaseTool {
         return result;
     }
 
+    /**
+     * Reads the feature project set file from the given update site project, and
+     * returns the set of corresponding FeatureInfos, filtering out any non-existent
+     * feature projects (necessary when feature projects get renamed).
+     */
     public List<FeatureInfo> readUpdateFeatureInfos(UpdateSiteInfo siteInfo) {
         IProject updateProject= siteInfo.fProject;
         IFile featureSetFile= updateProject.getFile("features.psf");
@@ -1103,7 +1149,10 @@ public abstract class ReleaseTool {
                 if (projectName.endsWith(".feature")) {
                     projectName= projectName.substring(0, projectName.lastIndexOf(".feature"));
                 }
-                result.add(findFeatureInfo(projectName));
+                FeatureInfo featureInfo= findFeatureInfo(projectName);
+                if (featureInfo != null) {
+                    result.add(featureInfo);
+                }
             }
         }
         return result;
