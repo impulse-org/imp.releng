@@ -50,7 +50,7 @@ import org.eclipse.swt.widgets.TableItem;
  * edit the set of published features, and then update the feature
  * project set for that update site.
  */
-public class FeatureSetDialog extends Dialog {
+public class UpdateSiteFeatureSetDialog extends Dialog {
     static class FeatureTableItem {
         String fFeatureId;
 
@@ -89,7 +89,7 @@ public class FeatureSetDialog extends Dialog {
 
     private final ReleaseTool fReleaseTool;
 
-    public FeatureSetDialog(Shell shell, List<UpdateSiteInfo> sites, ReleaseTool releaseTool) {
+    public UpdateSiteFeatureSetDialog(Shell shell, List<UpdateSiteInfo> sites, ReleaseTool releaseTool) {
         super(shell);
         fSites= sites;
         fReleaseTool= releaseTool;

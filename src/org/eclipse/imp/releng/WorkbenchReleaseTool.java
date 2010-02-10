@@ -48,7 +48,7 @@ import org.eclipse.imp.releng.dialogs.ConfirmChangedPluginsDialog;
 import org.eclipse.imp.releng.dialogs.ConfirmDirtyFilesDialog;
 import org.eclipse.imp.releng.dialogs.ConfirmProjectRetrievalDialog;
 import org.eclipse.imp.releng.dialogs.ConfirmUpdateSitesDialog;
-import org.eclipse.imp.releng.dialogs.FeatureSetDialog;
+import org.eclipse.imp.releng.dialogs.UpdateSiteFeatureSetDialog;
 import org.eclipse.imp.releng.dialogs.SelectFeatureInfosDialog;
 import org.eclipse.imp.releng.dialogs.SelectFeatureProjectsDialog;
 import org.eclipse.imp.releng.metadata.FeatureInfo;
@@ -216,7 +216,7 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         if (fFeatureInfos.size() == 0)
             return;
 
-        Dialog d= new FeatureSetDialog(getShell(), fUpdateSiteInfos, this);
+        Dialog d= new UpdateSiteFeatureSetDialog(getShell(), fUpdateSiteInfos, this);
         d.open();
     }
 
@@ -404,7 +404,13 @@ public class WorkbenchReleaseTool extends ReleaseTool {
         sUpdateTemplates.add(new TemplateInfo("buildCommon.xml", ""));
         sUpdateTemplates.add(new TemplateInfo("buildFeatureCommon.xml", ""));
         sUpdateTemplates.add(new TemplateInfo("buildPluginCommon.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("exportFeature.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("exportPlugin.xml", ""));
         sUpdateTemplates.add(new TemplateInfo("exportUpdate.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("exportUpdateCustom.xml", ""));
+        sUpdateTemplates.add(new TemplateInfo("SourceFeatureManifest.in", ""));
+        sUpdateTemplates.add(new TemplateInfo("SourcePluginManifest.in", ""));
+        sUpdateTemplates.add(new TemplateInfo("update.properties", ""));
     }
 
     public void addReleaseScripts() {
