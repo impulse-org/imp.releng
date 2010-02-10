@@ -152,12 +152,13 @@ public class RetrieveUpdateSiteDialog extends Dialog {
                         return "1.0,:extssh:" + repoServer + ":" + repoPath + "," + projectName + "," + projectName;
                     }
                 } else if (providerType.equals("SVN")) {
+                    String projRefSuffix= repoServer + repoPath + "/trunk/" + projectName + "/," + projectName;
                     if (anonAccess) {
                         // "0.9.3,http://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update"
-                        return "0.9.3,http://" + repoServer + repoPath + "/" + projectName + "/trunk," + projectName;
+                        return "0.9.3,http://" + projRefSuffix;
                     } else {
                         // "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update"
-                        return "0.9.3,https://" + repoServer + repoPath + "/" + projectName + "/trunk," + projectName;
+                        return "0.9.3,https://" + projRefSuffix;
                     }
                 }
                 throw new IllegalArgumentException("huh?");
