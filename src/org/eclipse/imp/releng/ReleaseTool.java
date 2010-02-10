@@ -348,7 +348,7 @@ public abstract class ReleaseTool {
     }
 
     public void incrementVersions() {
-	fCanProceed= true; // Assume ok until error encountered
+        fCanProceed= true; // Assume ok until error encountered
 
         collectMetaData(false);
 
@@ -370,8 +370,8 @@ public abstract class ReleaseTool {
     }
 
     public void collectMetaData(boolean allFeatures) {
-    	fUpdateSiteInfos.clear();
-    	fFeatureInfos.clear();
+        fUpdateSiteInfos.clear();
+        fFeatureInfos.clear();
         fPluginInfos.clear();
         fExclusions.clear();
         fCanProceed= true; // assume the best until proven otherwise
@@ -433,20 +433,20 @@ public abstract class ReleaseTool {
     private boolean confirmChanges() {
         Comparator<PluginInfo> pluginInfoComparator= new Comparator<PluginInfo>() {
             public int compare(PluginInfo arg0, PluginInfo arg1) {
-        	return arg0.fPluginID.compareTo(arg1.fPluginID);
+                return arg0.fPluginID.compareTo(arg1.fPluginID);
             }
         };
-	final Set<PluginInfo> changedPlugins= new TreeSet<PluginInfo>(pluginInfoComparator);
+        final Set<PluginInfo> changedPlugins= new TreeSet<PluginInfo>(pluginInfoComparator);
 
-	for(PluginInfo pi: fPluginInfos) {
+        for(PluginInfo pi: fPluginInfos) {
             if (pi.getChangeState().isChange()) {
-        	changedPlugins.add(pi);
+                changedPlugins.add(pi);
             }
         }
 
-	Set<PluginInfo> unchangedPlugins= new TreeSet<PluginInfo>(pluginInfoComparator);
+        Set<PluginInfo> unchangedPlugins= new TreeSet<PluginInfo>(pluginInfoComparator);
 
-	unchangedPlugins.addAll(fPluginInfos);
+        unchangedPlugins.addAll(fPluginInfos);
         unchangedPlugins.removeAll(changedPlugins);
         return doConfirm(changedPlugins, unchangedPlugins);
     }
@@ -467,17 +467,17 @@ public abstract class ReleaseTool {
 
                 fFeatureInfos.add(new FeatureInfo(project, manifestFile));
             } catch (ParserConfigurationException e) {
-        	ReleaseEngineeringPlugin.logError(e);
+                ReleaseEngineeringPlugin.logError(e);
             } catch (SAXException e) {
-        	ReleaseEngineeringPlugin.logError(e);
+                ReleaseEngineeringPlugin.logError(e);
             } catch (IOException e) {
-        	ReleaseEngineeringPlugin.logError(e);
+                ReleaseEngineeringPlugin.logError(e);
             }
         }
     }
 
     protected Set<IProject> selectFeatureProjects(final Set<IProject> allFeatureProjects) {
-	return allFeatureProjects;
+        return allFeatureProjects;
     }
 
     protected List<FeatureInfo> selectFeatureInfos() {
@@ -485,18 +485,18 @@ public abstract class ReleaseTool {
     }
 
     protected Set<IProject> collectAllFeatureProjects(IWorkspaceRoot wsRoot) {
-	Set<IProject> result= new TreeSet<IProject>(new Comparator<IProject>() {
-	    public int compare(IProject arg0, IProject arg1) {
-		return arg0.getName().compareTo(arg1.getName());
-	    }
-	});
+        Set<IProject> result= new TreeSet<IProject>(new Comparator<IProject>() {
+            public int compare(IProject arg0, IProject arg1) {
+                return arg0.getName().compareTo(arg1.getName());
+            }
+        });
         final IProject[] allProjects= wsRoot.getProjects();
 
         for(int i= 0; i < allProjects.length; i++) {
             final IProject proj= allProjects[i];
 
             if (proj.exists(new Path("feature.xml"))) {
-        	result.add(proj);
+                result.add(proj);
             }
         }
         return result;
@@ -512,6 +512,7 @@ public abstract class ReleaseTool {
     }
 
     private void collectUpdateSites() {
+        // TODO Should probably look for the nature "org.eclipse.pde.UpdateSiteNature"
         IWorkspaceRoot wsRoot= ResourcesPlugin.getWorkspace().getRoot();
 
         for(IProject project: wsRoot.getProjects()) {
@@ -794,15 +795,15 @@ public abstract class ReleaseTool {
             List<String> stanzas= coalesceStanzas(buildProperties.split("\n"));
 
             for(String stanza : stanzas) {
-		if (stanza.startsWith("bin.includes")) {
-		    String[] paths= stanza.substring(stanza.indexOf('=')+1).trim().split(",");
-		    for(String path : paths) {
-			if (!path.equals(".") && !path.equals("bin/")) {
-			    buildItems.add(new Path(path));
-			}
-		    }
-		}
-	    }
+                if (stanza.startsWith("bin.includes")) {
+                    String[] paths= stanza.substring(stanza.indexOf('=')+1).trim().split(",");
+                    for(String path : paths) {
+                        if (!path.equals(".") && !path.equals("bin/")) {
+                            buildItems.add(new Path(path));
+                        }
+                    }
+                }
+            }
         } catch (CoreException e) {
             ReleaseEngineeringPlugin.logError(e);
         }
@@ -810,16 +811,16 @@ public abstract class ReleaseTool {
     }
 
     private List<String> coalesceStanzas(String[] stanzas) {
-	List<String> result= new ArrayList<String>();
-	for(int i= 0; i < stanzas.length; i++) {
-	    String stanza= stanzas[i].trim();
-	    if (stanza.endsWith(",\\") || stanza.endsWith(",\\")) {
-		stanzas[i+1]= stanza.replaceAll(",\\\\", ",") + stanzas[i+1].trim();
-	    } else {
-		result.add(stanza);
-	    }
-	}
-	return result;
+        List<String> result= new ArrayList<String>();
+        for(int i= 0; i < stanzas.length; i++) {
+            String stanza= stanzas[i].trim();
+            if (stanza.endsWith(",\\") || stanza.endsWith(",\\")) {
+                stanzas[i+1]= stanza.replaceAll(",\\\\", ",") + stanzas[i+1].trim();
+            } else {
+                result.add(stanza);
+            }
+        }
+        return result;
     }
 
     private void scanPluginsForDiffs() {
@@ -840,10 +841,10 @@ public abstract class ReleaseTool {
             Set<IFile> oldFiles= oldMap.getAllFilesSorted();
 
             for(IFile f: oldFiles) {
-        	if (newMap.getVersion(f) == null) {
+                if (newMap.getVersion(f) == null) {
                     ReleaseEngineeringPlugin.getMsgStream().println("Plugin " + pi.fPluginID + " changed due to changed/deleted file " + f.getFullPath().toPortableString());
                     pi.updateReason(new FileDeleted(f.getFullPath()));
-        	} else if (!oldMap.getVersion(f).equals(newMap.getVersion(f))) {
+                } else if (!oldMap.getVersion(f).equals(newMap.getVersion(f))) {
                     ReleaseEngineeringPlugin.getMsgStream().println("Plugin " + pi.fPluginID + " changed due to changed/deleted file " + f.getFullPath().toPortableString());
                     pi.updateReason(new FileChange(f.getFullPath()));
                 }
@@ -896,30 +897,30 @@ public abstract class ReleaseTool {
         ReleaseEngineeringPlugin.getMsgStream().println("Rewriting feature manifest " + fi.fManifestFile.getLocation().toPortableString());
 
         try {
-	        Document manifestDoc= fi.fManifestDoc;
-	        DOMSource source= new DOMSource(manifestDoc);
-	        StringWriter strWriter= new StringWriter();
-	        StreamResult result= new StreamResult(strWriter);
-	        TransformerFactory tf= TransformerFactory.newInstance();
-	        Transformer serializer= tf.newTransformer();
+            Document manifestDoc= fi.fManifestDoc;
+            DOMSource source= new DOMSource(manifestDoc);
+            StringWriter strWriter= new StringWriter();
+            StreamResult result= new StreamResult(strWriter);
+            TransformerFactory tf= TransformerFactory.newInstance();
+            Transformer serializer= tf.newTransformer();
 
-	        serializer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
-	        serializer.setOutputProperty(OutputKeys.INDENT, "yes");
-	        serializer.transform(source, result);
+            serializer.setOutputProperty(OutputKeys.ENCODING, "ISO-8859-1");
+            serializer.setOutputProperty(OutputKeys.INDENT, "yes");
+            serializer.transform(source, result);
 
-	        TextFileChange tfc= new TextFileChange("Version increment for " + fi.fFeatureID, fi.fManifestFile);
-	        long curFileLength= new File(fi.fManifestFile.getLocation().toOSString()).length();
+            TextFileChange tfc= new TextFileChange("Version increment for " + fi.fFeatureID, fi.fManifestFile);
+            long curFileLength= new File(fi.fManifestFile.getLocation().toOSString()).length();
 
-	        tfc.setEdit(new MultiTextEdit());
-	        tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, strWriter.toString()));
-	
-	        changedFiles.add(fi.fManifestFile);
-	        changes.add(tfc);
+            tfc.setEdit(new MultiTextEdit());
+            tfc.addEdit(new ReplaceEdit(0, (int) curFileLength, strWriter.toString()));
+
+            changedFiles.add(fi.fManifestFile);
+            changes.add(tfc);
         } catch (TransformerConfigurationException e) {
-        	ReleaseEngineeringPlugin.logError(e);
+            ReleaseEngineeringPlugin.logError(e);
         } catch (TransformerException e) {
-        	ReleaseEngineeringPlugin.logError(e);
-		}
+            ReleaseEngineeringPlugin.logError(e);
+        }
     }
 
     protected void rewriteFeatureManifests(List<TextFileChange> changes, List<IFile> changedFiles) {
@@ -927,7 +928,7 @@ public abstract class ReleaseTool {
             try {
                 rewriteFeatureManifest(fi, changes, changedFiles);
             } catch (IOException io) {
-        	ReleaseEngineeringPlugin.logError(io);
+                ReleaseEngineeringPlugin.logError(io);
             }
         }
     }
@@ -955,7 +956,7 @@ public abstract class ReleaseTool {
                 changes.add(tfc);
                 changedFiles.add(manifest);
             } catch(FileNotFoundException fnf) {
-        	ReleaseEngineeringPlugin.logError(fnf);
+                ReleaseEngineeringPlugin.logError(fnf);
             }
         }
     }
@@ -978,7 +979,7 @@ public abstract class ReleaseTool {
             try {
                 f.refreshLocal(IResource.DEPTH_ONE, new NullProgressMonitor());
             } catch (CoreException e) {
-        	ReleaseEngineeringPlugin.logError(e);
+                ReleaseEngineeringPlugin.logError(e);
             }
         }
     }
@@ -1233,6 +1234,10 @@ public abstract class ReleaseTool {
                     }
 
                     String projectName= projectSetCapability.getProject(projectRef);
+                    if (projectName == null) {
+                        // projectSetCapability claims not to know how to parse project refs. Fake something
+                        projectName= projectRef.substring(projectRef.lastIndexOf(',')+1);
+                    }
 //                  IProgressMonitor subMonitor= new SubProgressMonitor(monitor, 10);
 //                  subMonitor.beginTask("Retrieving " + projectName, 10);
                     monitor.subTask("Retrieving " + projectName);
@@ -1297,7 +1302,7 @@ public abstract class ReleaseTool {
     public static final String IMP_REPO_SERVER= "dev.eclipse.org";
     public static final String IMP_REPO_PATH= "/svnroot/technology/org.eclipse.imp";
 
-    public static final String IMP_UPDATE_SITE_REF= "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/org.eclipse.imp.update/trunk,org.eclipse.imp.update";
+    public static final String IMP_UPDATE_SITE_REF= "0.9.3,https://dev.eclipse.org/svnroot/technology/org.eclipse.imp/trunk/org.eclipse.imp.update,org.eclipse.imp.update";
 
     public void retrieveProject(String projectRef, String providerType) {
         Map<String, Set<String>> projectRefs= new HashMap<String, Set<String>>();
@@ -1528,23 +1533,23 @@ public abstract class ReleaseTool {
     }
 
     public static String getFileContents(Reader reader) {
-	// In this case we don't know the length in advance, so we have to
-	// accumulate the reader's contents one buffer at a time.
-	StringBuilder sb= new StringBuilder(4096);
-	char[] buff= new char[4096];
-	int len;
+        // In this case we don't know the length in advance, so we have to
+        // accumulate the reader's contents one buffer at a time.
+        StringBuilder sb= new StringBuilder(4096);
+        char[] buff= new char[4096];
+        int len;
 
-	while(true) {
-	    try {
-		len= reader.read(buff);
-	    } catch (IOException e) {
-		break;
-	    }
-	    if (len < 0)
-		break;
-	    sb.append(buff, 0, len);
-	}
-	return sb.toString();
+        while (true) {
+            try {
+                len= reader.read(buff);
+            } catch (IOException e) {
+                break;
+            }
+            if (len < 0)
+                break;
+            sb.append(buff, 0, len);
+        }
+        return sb.toString();
     }
 
     public UpdateSiteInfo findSiteByName(String name) {
