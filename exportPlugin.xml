@@ -28,12 +28,11 @@
 		<copy todir="${temp.folder}/${plugin.jar.name}.bin" failonerror="true" overwrite="false">
 			<fileset dir="src/" excludes="**/*.java,**/package.htm*"/>
 		</copy>
-<!--	<mkdir dir="${temp.folder}/${plugin.jar.name}.bin/icons"/>
-		<copy todir="${temp.folder}/${plugin.jar.name}.bin/icons" failonerror="true" overwrite="false">
-			<fileset dir="icons/"/>
+	    <mkdir dir="${temp.folder}/${plugin.jar.name}.bin/updateTemplates"/>
+		<copy todir="${temp.folder}/${plugin.jar.name}.bin/updateTemplates" failonerror="true" overwrite="false">
+			<fileset dir="updateTemplates/"/>
 		</copy>
-  -->
-	        <copy file="ant-imp.jar" todir="${temp.folder}/${plugin.jar.name}.bin" failonerror="true"/>
+        <copy file="ant-imp.jar" todir="${temp.folder}/${plugin.jar.name}.bin" failonerror="true"/>
 		<copy file="plugin.xml" todir="${temp.folder}/${plugin.jar.name}.bin" failonerror="true"/>
 		<mkdir dir="${build.result.folder}"/>
 		<jar destfile="${build.result.folder}/${plugin.jar.name}" basedir="${temp.folder}/${plugin.jar.name}.bin"
