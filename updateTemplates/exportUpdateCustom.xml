@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="org.eclipse.imp.update" default="build.update.zip" basedir=".">
+    <target name="init.custom">
+        <property name="global.plugin.script" value="../org.eclipse.imp.update/exportPlugin.xml"/>
+        <property name="default.feature.script" value="../org.eclipse.imp.update/exportFeature.xml"/>
+
+        <fail unless="sdf.update.cache">
+            You must define the Ant property sdf.update.cache to be the location of an
+        	SDF update site directory for IMP with the proper structure.
+            It should have a sub-directory for each SDF version, each of which should
+        	have sub-directories 'features' and 'plugins'.
+        	For example: $${sdf.update.cache}/1.0.10/features should exist.
+        </fail>
+        <available file="${sdf.update.cache}/${sdf.update.version}/features" property="sdf.update.verified"/>
+        <fail unless="sdf.update.verified">
+            The Ant property sdf.update.cache exists, but does not point to an
+        	SDF update site directory for IMP with the proper structure.
+            It should have a sub-directory for each SDF version, each of which should
+            have sub-directories 'features' and 'plugins'.
+            For example: $${sdf.update.cache}/1.0.10/features should exist.
+        </fail>
+    </target>
+
+    <target name="collect.extra.artifacts">
+        <antcall target="collect.lpg.artifacts"/>
+        <antcall target="collect.polyglot.artifacts"/>
+        <antcall target="collect.sdf.artifacts"/>
+    </target>
+
+    <target name="collect.lpg.artifacts">
+        <delete dir="../lpg.update/plugins" includes="*.jar"/>
+        <delete dir="../lpg.update/features" includes="*.jar"/>
+
+        <ant antfile="../lpg.update/exportUpdate.xml" target="build.plugins"/>
+        <ant antfile="../lpg.update/exportUpdate.xml" target="build.features"/>
+
+        <copy todir="${update.temp.folder}/plugins" failonerror="true" overwrite="false">
+           <fileset dir="../lpg.update/plugins" includes="*.jar"/>
+        </copy>
+        <copy todir="${update.temp.folder}/features" failonerror="true" overwrite="false">
+            <fileset dir="../lpg.update/features" includes="*.jar"/>
+        </copy>
+    </target>
+
+    <target name="collect.polyglot.artifacts">
+        <delete dir="../polyglot/eclipseUpdates/plugins" includes="*.jar"/>
+        <delete dir="../polyglot/eclipseUpdates/features" includes="*.jar"/>
+
+        <ant antfile="../polyglot/build.xml" dir="../polyglot" target="build-plugin"/>
+        <ant antfile="../polyglot/build.xml" dir="../polyglot" target="build-features"/>
+
+        <copy todir="${update.temp.folder}/plugins" failonerror="true" overwrite="false">
+           <fileset dir="../polyglot/eclipseUpdates/plugins" includes="polyglot_*.jar"/>
+        </copy>
+        <copy todir="${update.temp.folder}/features" failonerror="true" overwrite="false">
+           <fileset dir="../polyglot/eclipseUpdates/features" includes="polyglot_*.jar"/>
+        </copy>
+    </target>
+
+    <target name="collect.sdf.artifacts">
+        <copy todir="${update.temp.folder}/features" failonerror="true" overwrite="false">
+            <fileset dir="${sdf.update.cache}/${sdf.update.version}/features" includes="sdf_eclipse_installer_feature_${sdf.update.version}.jar"/>
+        </copy>
+        <copy todir="${update.temp.folder}/plugins" failonerror="true" overwrite="false">
+            <fileset dir="${sdf.update.cache}/${sdf.update.version}/plugins" includes="sdf_eclipse_installer*_${sdf.update.version}.jar"/>
+        </copy>
+    </target>
+
+    <target name="add.all.features">
+        <antcall target="add.features.sdf"/>
+        <antcall target="add.features.lpg"/>
+        <antcall target="add.features.polyglot"/>
+        <antcall target="add.features.imp"/>
+    </target>
+
+    <target name="add.features.sdf">
+        <antcall target="add.feature">
+            <param name="feature.id"      value="sdf_eclipse_installer_feature"/>
+            <param name="feature.version" value="${sdf.update.version}"/>
+            <param name="category"        value="IMP Prerequisites"/>
+        </antcall>
+    </target>
+
+    <target name="add.features.lpg">
+        <antcall target="add.feature">
+            <param name="feature.id"      value="lpg.generator"/>
+            <param name="feature.version" value="2.0.17"/>
+            <param name="category"        value="IMP Prerequisites"/>
+        </antcall>
+        <antcall target="add.feature">
+            <param name="feature.id"      value="lpg.runtime"/>
+            <param name="feature.version" value="2.0.17"/>
+            <param name="category"        value="IMP Prerequisites"/>
+        </antcall>
+    </target>
+
+    <target name="add.features.polyglot">
+        <antcall target="add.feature">
+            <param name="feature.id"      value="polyglot"/>
+            <param name="feature.version" value="2.4.0"/>
+            <param name="category"        value="IMP Prerequisites"/>
+        </antcall>
+    </target>
+
+    <target name="add.features.imp">
+        <for param="feature.id" values="${feature.list}" separator=",">
+            <!-- The following, when inlined, fails to set a new feature.version for each iteration (why???) -->
+            <antcall target="add.imp.feature"/>
+        </for>
+    </target>
+
+    <target name="add.imp.feature">
+        <xmlproperty file="../${feature.id}.feature/feature.xml"/>
+        <echo message="feature id = ${feature.id}"/>
+        <propertyRegexp name="feature.version" input="${feature(version)}" regexp="(.*).qualifier" value="\1.${build.qualifier}"/>
+        <echo message="feature version = ${feature(version)}"/>
+        <antcall target="add.bin.src.features">
+            <param name="feature.id"      value="${feature.id}"/>
+            <param name="feature.version" value="${feature.version}"/>
+            <param name="bin.category"    value="IMP"/>
+            <param name="src.category"    value="IMP Source"/>
+        </antcall>
+    </target>
+
+</project>

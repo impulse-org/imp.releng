@@ -1,20 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="updcommon" basedir=".">
-    <property name="basews" value="${ws}"/>
-    <property name="baseos" value="${os}"/>
-    <property name="basearch" value="${arch}"/>
-    <property name="basenl" value="${nl}"/>
+<project name="update.common" basedir=".">
+    <tstamp>
+        <format property="build.time" pattern="yyyyMMddHHmm"/> 
+    </tstamp>
+    <condition property="build.qualifier" value="v${build.time}">
+        <not>
+            <isset property="build.qualifier"/>
+        </not>
+    </condition>
 
-    <!-- Compiler settings. -->
+    <!-- Global Java compiler settings -->
     <property name="javacFailOnError" value="true"/>
     <property name="javacDebugInfo" value="on"/>
     <property name="javacVerbose" value="false"/>
-
+<!--
     <echo message="java.home = ${java.home}"/>
     <echo message="java.class.path = ${java.class.path}"/>
     <echo message="ant.home = ${ant.home}"/>
+  -->
 
-    <condition property="mac.jre.path" value="${java.home}/../Classes">
+	<condition property="mac.jre.path" value="${java.home}/../Classes">
         <os family="mac"/>
     </condition>
 
@@ -22,7 +27,7 @@
         <not> <os family="mac"/> </not>
     </condition>
 
-    <echo message="mac.jre.path = ${mac.jre.path}"/>
+<!-- <echo message="mac.jre.path = ${mac.jre.path}"/> -->
 
     <path id="path_bootclasspath">
     	<pathelement path="${java.class.path}"/>
@@ -39,12 +44,12 @@
 
     <property name="bootclasspath" refid="path_bootclasspath"/>
 
-    <fail unless="my.eclipse.target" message="You must define my.eclipse.target as the location of the Eclipse installation against which these features should be built."/>
+    <fail unless="imp.eclipse.target" message="You must define the property 'imp.eclipse.target' (in the Ant runtime preferences) as the location of the Eclipse installation against which IMP should be built."/>
 
-    <echo message="my.eclipse.target = ${my.eclipse.target}"/>
+<!-- <echo message="imp.eclipse.target = ${imp.eclipse.target}"/> -->
 
     <path id="path_eclipse.build.path">
-        <fileset dir="${my.eclipse.target}/plugins">
+        <fileset dir="${imp.eclipse.target}/plugins">
             <include name="**/*.jar"/>
         </fileset>
     </path>
