@@ -177,11 +177,11 @@ public class PluginInfo {
         if (project != null) {
             fManifest= project.getFile(new Path("META-INF/MANIFEST.MF"));
             if (!fManifest.exists()) {
-                ReleaseEngineeringPlugin.getMsgStream().println("     * Unable to find bundle manifest for plugin " + pluginID);
+                ReleaseEngineeringPlugin.getErrorStream().println("     * Unable to find bundle manifest for plugin " + pluginID);
                 fPluginOk= false;
             }
         } else {
-            ReleaseEngineeringPlugin.getMsgStream().println("     * Unable to find project for plugin " + pluginID);
+            ReleaseEngineeringPlugin.getErrorStream().println("     * Unable to find workspace project for plugin " + pluginID);
             fPluginOk= false;
         }
     }
