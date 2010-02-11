@@ -645,7 +645,11 @@ public abstract class ReleaseTool {
      */
     protected String incrementVersionRelease(String version) {
         StringTokenizer st= new StringTokenizer(version, ".");
-        return st.nextToken() + "." + st.nextToken() + "." + (Integer.parseInt(st.nextToken()) + 1);
+        String newVers= st.nextToken() + "." + st.nextToken() + "." + (Integer.parseInt(st.nextToken()) + 1);
+        if (st.hasMoreTokens()) {
+            newVers= newVers + "." + st.nextToken();
+        }
+        return newVers;
     }
 
     private void fixupFeatureRequires() {
