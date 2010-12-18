@@ -1,14 +1,14 @@
 /*******************************************************************************
-* Copyright (c) 2007 IBM Corporation.
-* All rights reserved. This program and the accompanying materials
-* are made available under the terms of the Eclipse Public License v1.0
-* which accompanies this distribution, and is available at
-* http://www.eclipse.org/legal/epl-v10.html
-*
-* Contributors:
-*    Robert Fuhrer (rfuhrer@watson.ibm.com) - initial API and implementation
+ * Copyright (c) 2007 IBM Corporation.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *    Robert Fuhrer (rfuhrer@watson.ibm.com) - initial API and implementation
 
-*******************************************************************************/
+ *******************************************************************************/
 
 /**
  * 
@@ -39,7 +39,7 @@ public class ConfirmChangedPluginsDialog extends Dialog {
             fPi= pi;
         }
 
-        public void widgetDefaultSelected(SelectionEvent e) { }
+        public void widgetDefaultSelected(SelectionEvent e) {}
 
         public void widgetSelected(SelectionEvent e) {
             Shell shell= PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
@@ -76,27 +76,27 @@ public class ConfirmChangedPluginsDialog extends Dialog {
         Composite area= (Composite) super.createDialogArea(parent);
         GridLayout grid= new GridLayout(3, true);
         area.setLayout(grid);
-        for(final PluginInfo pi: fChangedPlugins) {
+        for(final PluginInfo pi : fChangedPlugins) {
             Label pluginID= new Label(area, SWT.NONE);
             Label pluginVersion= new Label(area, SWT.NONE);
-    
+
             pluginID.setText(pi.fPluginID);
             pluginVersion.setText(pi.fPluginNewVersion);
-    
+
             if (pi.getChangeState().isChange()) {
-        	Button detailsButton= new Button(area, SWT.PUSH);
-        	detailsButton.setText("details...");
-        	detailsButton.addSelectionListener(new DetailsButtonListener(pi));
+                Button detailsButton= new Button(area, SWT.PUSH);
+                detailsButton.setText("details...");
+                detailsButton.addSelectionListener(new DetailsButtonListener(pi));
             } else {
-        	Label changeReason= new Label(area, SWT.NONE);
-        	changeReason.setText(pi.getChangeState().toString());
+                Label changeReason= new Label(area, SWT.NONE);
+                changeReason.setText(pi.getChangeState().toString());
             }
         }
-        for(PluginInfo pi: fUnchangedPlugins2) {
+        for(PluginInfo pi : fUnchangedPlugins2) {
             Label pluginID= new Label(area, SWT.NONE);
             Label pluginVersion= new Label(area, SWT.NONE);
             Label changeReason= new Label(area, SWT.NONE);
-    
+
             pluginID.setText(pi.fPluginID);
             pluginVersion.setText("");
             changeReason.setText("<unchanged>");
